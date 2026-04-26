@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Integral de Gestión SSO</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#007bff">
+    <!-- Iconos para PWA -->
+    <link rel="icon" href="assets/icons/icon-192.png" sizes="192x192">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <button id="menu-toggle" class="menu-toggle">☰</button>
+            <h1>Sistema SSO</h1>
+            <div class="user-info">
+                <span>Usuario: Técnico Prevencionista</span>
+            </div>
+        </div>
+    </header>
+
+    <nav id="sidebar" class="sidebar">
+        <ul>
+            <li><a href="#dashboard">Dashboard</a></li>
+            <li><a href="#inspecciones">Inspecciones</a></li>
+            <li><a href="#documentos">Documentos</a></li>
+            <li><a href="#planificacion">Planificación</a></li>
+            <li><a href="#analiticas">Analíticas</a></li>
+            <li><a href="#configuracion">Configuración</a></li>
+        </ul>
+    </nav>
+
+    <main class="main-content">
+        <section id="dashboard" class="dashboard">
+            <h2>Dashboard Maestro</h2>
+            <div class="company-selector">
+                <label for="company-select">Seleccionar Empresa:</label>
+                <select id="company-select">
+                    <option value="">-- Seleccionar --</option>
+                    <option value="empresa1">Empresa 1</option>
+                    <option value="empresa2">Empresa 2</option>
+                    <option value="empresa3">Empresa 3</option>
+                </select>
+            </div>
+            <div class="alerts">
+                <h3>Alertas Globales</h3>
+                <div class="alert-card">
+                    <p>Empresa 1: Inspección pendiente</p>
+                    <span class="status rojo">Vencido</span>
+                </div>
+                <div class="alert-card">
+                    <p>Empresa 2: Capacitación próxima</p>
+                    <span class="status amarillo">Próximo</span>
+                </div>
+                <div class="alert-card">
+                    <p>Empresa 3: Todo al día</p>
+                    <span class="status verde">Al día</span>
+                </div>
+            </div>
+            <div class="stats">
+                <div class="stat-card">
+                    <h4>Inspecciones Hoy</h4>
+                    <p>5</p>
+                </div>
+                <div class="stat-card">
+                    <h4>Documentos Generados</h4>
+                    <p>12</p>
+                </div>
+                <div class="stat-card">
+                    <h4>IF Promedio</h4>
+                    <p>2.3</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="inspecciones" class="inspecciones" style="display: none;">
+            <h2>Nueva Inspección de Seguridad</h2>
+            <form id="inspection-form">
+                <div class="form-group">
+                    <label for="inspection-type">Tipo de Inspección:</label>
+                    <select id="inspection-type" required>
+                        <option value="">Seleccionar...</option>
+                        <option value="seguridad">Seguridad General</option>
+                        <option value="salud">Salud Ocupacional</option>
+                        <option value="riesgos">Evaluación de Riesgos</option>
+                        <option value="emergencia">Plan de Emergencia</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Checklist de Inspección:</label>
+                    <div class="checklist">
+                        <div class="checklist-item">
+                            <input type="checkbox" id="item1" name="checklist" value="Señalización adecuada">
+                            <label for="item1">Señalización adecuada</label>
+                        </div>
+                        <div class="checklist-item">
+                            <input type="checkbox" id="item2" name="checklist" value="Equipos de protección">
+                            <label for="item2">Equipos de protección disponibles</label>
+                        </div>
+                        <div class="checklist-item">
+                            <input type="checkbox" id="item3" name="checklist" value="Extintores">
+                            <label for="item3">Extintores en buen estado</label>
+                        </div>
+                        <div class="checklist-item">
+                            <input type="checkbox" id="item4" name="checklist" value="Iluminación">
+                            <label for="item4">Iluminación adecuada</label>
+                        </div>
+                        <div class="checklist-item">
+                            <input type="checkbox" id="item5" name="checklist" value="Salidas de emergencia">
+                            <label for="item5">Salidas de emergencia despejadas</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="observations">Observaciones:</label>
+                    <textarea id="observations" rows="3" placeholder="Describa hallazgos, recomendaciones..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Fotos de Evidencia:</label>
+                    <div class="photo-section">
+                        <button type="button" id="capture-photo" class="btn-large">📷 Capturar Foto</button>
+                        <input type="file" id="photo-input" accept="image/*" capture="environment" style="display: none;">
+                        <div id="photo-preview"></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Firma Digital:</label>
+                    <div class="signature-section">
+                        <canvas id="signature-canvas" width="300" height="150"></canvas>
+                        <div class="signature-controls">
+                            <button type="button" id="clear-signature" class="btn-secondary">Limpiar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-large btn-primary">Guardar Inspección</button>
+                    <button type="button" id="cancel-inspection" class="btn-secondary">Cancelar</button>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
