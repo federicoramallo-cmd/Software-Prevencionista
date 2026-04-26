@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Integral de Gestión SSO</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f766e">
+    <link rel="icon" href="assets/logos/sso.svg" type="image/svg+xml">
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-content">
+            <button id="menu-toggle" class="icon-button menu-toggle" type="button" aria-label="Abrir menú">☰</button>
+
+            <div class="brand-lockup">
+                <div class="logo-frame">
+                    <img id="app-logo" class="app-logo" src="assets/logos/sso.svg" alt="Logo Sistema SSO">
+                </div>
+                <div>
+                    <p id="company-kicker" class="company-kicker">Sistema Integral</p>
+                    <h1 id="app-title">Sistema SSO</h1>
+                </div>
+            </div>
+
+            <div class="user-info">
+                <span>Técnico Prevencionista</span>
+            </div>
+        </div>
+    </header>
+
+    <nav id="sidebar" class="sidebar" aria-label="Navegación principal">
+        <ul>
+            <li><a class="active" href="#dashboard">Dashboard</a></li>
+            <li><a href="#inspecciones">Inspecciones</a></li>
+            <li><a href="#documentos">Documentos</a></li>
+            <li><a href="#planificacion">Planificación</a></li>
+            <li><a href="#analiticas">Analíticas</a></li>
+            <li><a href="#configuracion">Configuración</a></li>
+        </ul>
+    </nav>
+
+    <main class="main-content">
+        <section id="dashboard" class="content-panel dashboard">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">Panel operativo</p>
+                    <h2>Dashboard Maestro</h2>
+                </div>
+                <span id="selected-company-pill" class="company-pill">Sin empresa activa</span>
+            </div>
+
+            <div class="company-selector">
+                <label for="company-select">Seleccionar empresa</label>
+                <select id="company-select">
+                    <option value="">Seleccionar empresa...</option>
+                </select>
+            </div>
+
+            <div class="alerts">
+                <h3>Alertas Globales</h3>
+                <div id="alerts-list" class="alerts-list">
+                    <div class="alert-card">
+                        <p>Selecciona una empresa para ver sus alertas operativas.</p>
+                        <span class="status amarillo">Pendiente</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats">
+                <div class="stat-card">
+                    <h4>Inspecciones Hoy</h4>
+                    <p id="stat-inspections">0</p>
+                </div>
+                <div class="stat-card">
+                    <h4>Documentos Generados</h4>
+                    <p id="stat-documents">0</p>
+                </div>
+                <div class="stat-card">
+                    <h4>IF Promedio</h4>
+                    <p id="stat-if">0.0</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="inspecciones" class="content-panel inspecciones" hidden>
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">RE 002</p>
+                    <h2>Registro de Inspección de Seguridad</h2>
+                </div>
+                <span class="company-pill" data-current-company>Sin empresa activa</span>
+            </div>
+
+            <form id="inspection-form" class="inspection-form" autocomplete="on">
+                <input type="hidden" id="empresa-id" name="Empresa ID">
+                <input type="hidden" id="empresa-nombre" name="Empresa">
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="fecha">Fecha</label>
+                        <input id="fecha" name="Fecha" type="date" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="obra">Obra</label>
+                        <input id="obra" name="Obra" type="text" placeholder="Nombre de la obra" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="sector-obra">Sector de la Obra</label>
+                    <select id="sector-obra" name="Sector de la Obra" required>
+                        <option value="">Seleccionar sector...</option>
+                        <option value="Acceso y circulación">Acceso y circulación</option>
+                        <option value="Excavación">Excavación</option>
+                        <option value="Estructura">Estructura</option>
+                        <option value="Trabajo en altura">Trabajo en altura</option>
+                        <option value="Instalación eléctrica">Instalación eléctrica</option>
+                        <option value="Acopio y depósito">Acopio y depósito</option>
+                        <option value="Servicios higiénicos y bienestar">Servicios higiénicos y bienestar</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="inspeccion-realizada-por">Inspección realizada por</label>
+                    <input id="inspeccion-realizada-por" name="Inspección realizada por" type="text" value="Técnico Prevencionista Federico RAMALLO - Matrícula 1355" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="observacion">Observación</label>
+                    <textarea id="observacion" name="Observación" rows="5" placeholder="Condiciones verificadas, prácticas seguras, actos o condiciones subestándar..." required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="recomendacion">Recomendación</label>
+                    <textarea id="recomendacion" name="Recomendación" rows="4" placeholder="Medidas correctivas o preventivas propuestas..."></textarea>
+                </div>
+
+                <div class="form-group evidence-group">
+                    <label>Evidencia fotográfica</label>
+                    <button type="button" id="capture-photo" class="btn-large btn-primary">Capturar Evidencia</button>
+                    <input type="file" id="photo-input" name="Evidencia fotográfica" accept="image/*" capture="environment">
+                    <div id="photo-preview" class="photo-preview" aria-live="polite">
+                        <span>Sin evidencia cargada</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="encargado-presente">Encargado presente en obra</label>
+                    <input id="encargado-presente" name="Encargado presente en obra" type="text" placeholder="Nombre y apellido" required>
+                </div>
+
+                <div class="form-group signature-group">
+                    <div class="signature-label-row">
+                        <label for="signature-canvas">Firma</label>
+                        <button type="button" id="clear-signature" class="btn-text">Limpiar</button>
+                    </div>
+                    <canvas id="signature-canvas" class="signature-canvas" aria-label="Panel de firma"></canvas>
+                    <input type="hidden" id="firma-encargado" name="Firma">
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-large btn-primary">Guardar Inspección</button>
+                    <button type="button" id="cancel-inspection" class="btn-large btn-secondary">Cancelar</button>
+                </div>
+            </form>
+        </section>
+
+        <section id="documentos" class="content-panel placeholder-section" hidden>
+            <h2>Documentos</h2>
+            <p>Los documentos generados desde RE 002 quedarán listados aquí.</p>
+        </section>
+
+        <section id="planificacion" class="content-panel placeholder-section" hidden>
+            <h2>Planificación</h2>
+            <p>Seguimiento de actividades preventivas y vencimientos.</p>
+        </section>
+
+        <section id="analiticas" class="content-panel placeholder-section" hidden>
+            <h2>Analíticas</h2>
+            <p>Indicadores de inspecciones, hallazgos y frecuencia.</p>
+        </section>
+
+        <section id="configuracion" class="content-panel placeholder-section" hidden>
+            <h2>Configuración</h2>
+            <p>Preferencias de usuario y parámetros de la aplicación.</p>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
