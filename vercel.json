@@ -1,4 +1,9 @@
 {
-  "buildCommand": "echo 'No build required'",
-  "cleanUrls": false
+  "cleanUrls": false,
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/index.html"
+    }
+  ]
 }
