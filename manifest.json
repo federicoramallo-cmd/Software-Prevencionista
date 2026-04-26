@@ -1,0 +1,17 @@
+{
+  "name": "Sistema Integral de Gestión SSO",
+  "short_name": "SSO Gestión",
+  "description": "Aplicación para técnicos prevencionistas: gestión de inspecciones, documentos y analíticas.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0f766e",
+  "icons": [
+    {
+      "src": "assets/logos/sso.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
