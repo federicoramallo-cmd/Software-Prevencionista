@@ -1,0 +1,20 @@
+[
+  {
+    "id": "constructora-norte",
+    "nombre": "Constructora Norte S.A.",
+    "logoURL": "assets/logos/constructora-norte.svg",
+    "colorCorporativo": "#0f766e"
+  },
+  {
+    "id": "metalurgica-delta",
+    "nombre": "Metalúrgica Delta",
+    "logoURL": "assets/logos/metalurgica-delta.svg",
+    "colorCorporativo": "#b45309"
+  },
+  {
+    "id": "logistica-sur",
+    "nombre": "Logística Sur",
+    "logoURL": "assets/logos/logistica-sur.svg",
+    "colorCorporativo": "#2563eb"
+  }
+]

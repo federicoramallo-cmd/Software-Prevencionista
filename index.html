@@ -6,25 +6,33 @@
     <title>Sistema Integral de Gestión SSO</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#007bff">
-    <!-- Iconos para PWA -->
-    <link rel="icon" href="assets/icons/icon-192.png" sizes="192x192">
-    <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+    <meta name="theme-color" content="#0f766e">
+    <link rel="icon" href="assets/logos/sso.svg" type="image/svg+xml">
 </head>
 <body>
-    <header>
+    <header class="app-header">
         <div class="header-content">
-            <button id="menu-toggle" class="menu-toggle">☰</button>
-            <h1>Sistema SSO</h1>
+            <button id="menu-toggle" class="icon-button menu-toggle" type="button" aria-label="Abrir menú">☰</button>
+
+            <div class="brand-lockup">
+                <div class="logo-frame">
+                    <img id="app-logo" class="app-logo" src="assets/logos/sso.svg" alt="Logo Sistema SSO">
+                </div>
+                <div>
+                    <p id="company-kicker" class="company-kicker">Sistema Integral</p>
+                    <h1 id="app-title">Sistema SSO</h1>
+                </div>
+            </div>
+
             <div class="user-info">
-                <span>Usuario: Técnico Prevencionista</span>
+                <span>Técnico Prevencionista</span>
             </div>
         </div>
     </header>
 
-    <nav id="sidebar" class="sidebar">
+    <nav id="sidebar" class="sidebar" aria-label="Navegación principal">
         <ul>
-            <li><a href="#dashboard">Dashboard</a></li>
+            <li><a class="active" href="#dashboard">Dashboard</a></li>
             <li><a href="#inspecciones">Inspecciones</a></li>
             <li><a href="#documentos">Documentos</a></li>
             <li><a href="#planificacion">Planificación</a></li>
@@ -34,117 +42,150 @@
     </nav>
 
     <main class="main-content">
-        <section id="dashboard" class="dashboard">
-            <h2>Dashboard Maestro</h2>
+        <section id="dashboard" class="content-panel dashboard">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">Panel operativo</p>
+                    <h2>Dashboard Maestro</h2>
+                </div>
+                <span id="selected-company-pill" class="company-pill">Sin empresa activa</span>
+            </div>
+
             <div class="company-selector">
-                <label for="company-select">Seleccionar Empresa:</label>
+                <label for="company-select">Seleccionar empresa</label>
                 <select id="company-select">
-                    <option value="">-- Seleccionar --</option>
-                    <option value="empresa1">Empresa 1</option>
-                    <option value="empresa2">Empresa 2</option>
-                    <option value="empresa3">Empresa 3</option>
+                    <option value="">Seleccionar empresa...</option>
                 </select>
             </div>
+
             <div class="alerts">
                 <h3>Alertas Globales</h3>
-                <div class="alert-card">
-                    <p>Empresa 1: Inspección pendiente</p>
-                    <span class="status rojo">Vencido</span>
-                </div>
-                <div class="alert-card">
-                    <p>Empresa 2: Capacitación próxima</p>
-                    <span class="status amarillo">Próximo</span>
-                </div>
-                <div class="alert-card">
-                    <p>Empresa 3: Todo al día</p>
-                    <span class="status verde">Al día</span>
+                <div id="alerts-list" class="alerts-list">
+                    <div class="alert-card">
+                        <p>Selecciona una empresa para ver sus alertas operativas.</p>
+                        <span class="status amarillo">Pendiente</span>
+                    </div>
                 </div>
             </div>
+
             <div class="stats">
                 <div class="stat-card">
                     <h4>Inspecciones Hoy</h4>
-                    <p>5</p>
+                    <p id="stat-inspections">0</p>
                 </div>
                 <div class="stat-card">
                     <h4>Documentos Generados</h4>
-                    <p>12</p>
+                    <p id="stat-documents">0</p>
                 </div>
                 <div class="stat-card">
                     <h4>IF Promedio</h4>
-                    <p>2.3</p>
+                    <p id="stat-if">0.0</p>
                 </div>
             </div>
         </section>
 
-        <section id="inspecciones" class="inspecciones" style="display: none;">
-            <h2>Nueva Inspección de Seguridad</h2>
-            <form id="inspection-form">
+        <section id="inspecciones" class="content-panel inspecciones" hidden>
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">RE 002</p>
+                    <h2>Registro de Inspección de Seguridad</h2>
+                </div>
+                <span class="company-pill" data-current-company>Sin empresa activa</span>
+            </div>
+
+            <form id="inspection-form" class="inspection-form" autocomplete="on">
+                <input type="hidden" id="empresa-id" name="Empresa ID">
+                <input type="hidden" id="empresa-nombre" name="Empresa">
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="fecha">Fecha</label>
+                        <input id="fecha" name="Fecha" type="date" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="obra">Obra</label>
+                        <input id="obra" name="Obra" type="text" placeholder="Nombre de la obra" required>
+                    </div>
+                </div>
+
                 <div class="form-group">
-                    <label for="inspection-type">Tipo de Inspección:</label>
-                    <select id="inspection-type" required>
-                        <option value="">Seleccionar...</option>
-                        <option value="seguridad">Seguridad General</option>
-                        <option value="salud">Salud Ocupacional</option>
-                        <option value="riesgos">Evaluación de Riesgos</option>
-                        <option value="emergencia">Plan de Emergencia</option>
+                    <label for="sector-obra">Sector de la Obra</label>
+                    <select id="sector-obra" name="Sector de la Obra" required>
+                        <option value="">Seleccionar sector...</option>
+                        <option value="Acceso y circulación">Acceso y circulación</option>
+                        <option value="Excavación">Excavación</option>
+                        <option value="Estructura">Estructura</option>
+                        <option value="Trabajo en altura">Trabajo en altura</option>
+                        <option value="Instalación eléctrica">Instalación eléctrica</option>
+                        <option value="Acopio y depósito">Acopio y depósito</option>
+                        <option value="Servicios higiénicos y bienestar">Servicios higiénicos y bienestar</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label>Checklist de Inspección:</label>
-                    <div class="checklist">
-                        <div class="checklist-item">
-                            <input type="checkbox" id="item1" name="checklist" value="Señalización adecuada">
-                            <label for="item1">Señalización adecuada</label>
-                        </div>
-                        <div class="checklist-item">
-                            <input type="checkbox" id="item2" name="checklist" value="Equipos de protección">
-                            <label for="item2">Equipos de protección disponibles</label>
-                        </div>
-                        <div class="checklist-item">
-                            <input type="checkbox" id="item3" name="checklist" value="Extintores">
-                            <label for="item3">Extintores en buen estado</label>
-                        </div>
-                        <div class="checklist-item">
-                            <input type="checkbox" id="item4" name="checklist" value="Iluminación">
-                            <label for="item4">Iluminación adecuada</label>
-                        </div>
-                        <div class="checklist-item">
-                            <input type="checkbox" id="item5" name="checklist" value="Salidas de emergencia">
-                            <label for="item5">Salidas de emergencia despejadas</label>
-                        </div>
+                    <label for="inspeccion-realizada-por">Inspección realizada por</label>
+                    <input id="inspeccion-realizada-por" name="Inspección realizada por" type="text" value="Técnico Prevencionista Federico RAMALLO - Matrícula 1355" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="observacion">Observación</label>
+                    <textarea id="observacion" name="Observación" rows="5" placeholder="Condiciones verificadas, prácticas seguras, actos o condiciones subestándar..." required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="recomendacion">Recomendación</label>
+                    <textarea id="recomendacion" name="Recomendación" rows="4" placeholder="Medidas correctivas o preventivas propuestas..."></textarea>
+                </div>
+
+                <div class="form-group evidence-group">
+                    <label>Evidencia fotográfica</label>
+                    <button type="button" id="capture-photo" class="btn-large btn-primary">Capturar Evidencia</button>
+                    <input type="file" id="photo-input" name="Evidencia fotográfica" accept="image/*" capture="environment">
+                    <div id="photo-preview" class="photo-preview" aria-live="polite">
+                        <span>Sin evidencia cargada</span>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label for="observations">Observaciones:</label>
-                    <textarea id="observations" rows="3" placeholder="Describa hallazgos, recomendaciones..."></textarea>
+                    <label for="encargado-presente">Encargado presente en obra</label>
+                    <input id="encargado-presente" name="Encargado presente en obra" type="text" placeholder="Nombre y apellido" required>
                 </div>
 
-                <div class="form-group">
-                    <label>Fotos de Evidencia:</label>
-                    <div class="photo-section">
-                        <button type="button" id="capture-photo" class="btn-large">📷 Capturar Foto</button>
-                        <input type="file" id="photo-input" accept="image/*" capture="environment" style="display: none;">
-                        <div id="photo-preview"></div>
+                <div class="form-group signature-group">
+                    <div class="signature-label-row">
+                        <label for="signature-canvas">Firma</label>
+                        <button type="button" id="clear-signature" class="btn-text">Limpiar</button>
                     </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Firma Digital:</label>
-                    <div class="signature-section">
-                        <canvas id="signature-canvas" width="300" height="150"></canvas>
-                        <div class="signature-controls">
-                            <button type="button" id="clear-signature" class="btn-secondary">Limpiar</button>
-                        </div>
-                    </div>
+                    <canvas id="signature-canvas" class="signature-canvas" aria-label="Panel de firma"></canvas>
+                    <input type="hidden" id="firma-encargado" name="Firma">
                 </div>
 
                 <div class="form-actions">
                     <button type="submit" class="btn-large btn-primary">Guardar Inspección</button>
-                    <button type="button" id="cancel-inspection" class="btn-secondary">Cancelar</button>
+                    <button type="button" id="cancel-inspection" class="btn-large btn-secondary">Cancelar</button>
                 </div>
             </form>
+        </section>
+
+        <section id="documentos" class="content-panel placeholder-section" hidden>
+            <h2>Documentos</h2>
+            <p>Los documentos generados desde RE 002 quedarán listados aquí.</p>
+        </section>
+
+        <section id="planificacion" class="content-panel placeholder-section" hidden>
+            <h2>Planificación</h2>
+            <p>Seguimiento de actividades preventivas y vencimientos.</p>
+        </section>
+
+        <section id="analiticas" class="content-panel placeholder-section" hidden>
+            <h2>Analíticas</h2>
+            <p>Indicadores de inspecciones, hallazgos y frecuencia.</p>
+        </section>
+
+        <section id="configuracion" class="content-panel placeholder-section" hidden>
+            <h2>Configuración</h2>
+            <p>Preferencias de usuario y parámetros de la aplicación.</p>
         </section>
     </main>
 
