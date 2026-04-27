@@ -1,20 +1,38 @@
 [
   {
-    "id": "constructora-norte",
-    "nombre": "Constructora Norte S.A.",
-    "logoURL": "assets/logos/constructora-norte.svg",
+    "id": "aplomo",
+    "nombre": "APLOMO",
+    "logoURL": "assets/logos/Logo Aplomo.jpeg",
     "colorCorporativo": "#0f766e"
   },
   {
-    "id": "metalurgica-delta",
-    "nombre": "Metalúrgica Delta",
-    "logoURL": "assets/logos/metalurgica-delta.svg",
+    "id": "eson",
+    "nombre": "ESON",
+    "logoURL": "assets/logos/Logo ESON.jpeg",
     "colorCorporativo": "#b45309"
   },
   {
-    "id": "logistica-sur",
-    "nombre": "Logística Sur",
-    "logoURL": "assets/logos/logistica-sur.svg",
+    "id": "fewell",
+    "nombre": "FEWELL",
+    "logoURL": "assets/logos/sso.svg",
+    "colorCorporativo": "#4f46e5"
+  },
+  {
+    "id": "movil-uno",
+    "nombre": "MOVIL UNO",
+    "logoURL": "assets/logos/Logo MovilUno.jpg",
     "colorCorporativo": "#2563eb"
+  },
+  {
+    "id": "oceanus",
+    "nombre": "OCEANUS",
+    "logoURL": "assets/logos/sso.svg",
+    "colorCorporativo": "#0891b2"
+  },
+  {
+    "id": "rabuffer",
+    "nombre": "RABUFFER",
+    "logoURL": "assets/logos/Logo Rabufer.jpg",
+    "colorCorporativo": "#0f172a"
   }
 ]

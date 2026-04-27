@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="title">
-  <title id="title">Metalúrgica Delta</title>
-  <rect width="96" height="96" rx="20" fill="#b45309"/>
-  <path d="M20 70V43l18 10V42l19 11V34h19v36H20z" fill="#ffedd5"/>
-  <path d="M58 28h18v12H58z" fill="#fed7aa"/>
-  <path d="M30 61h10m8 0h10m8 0h6" stroke="#b45309" stroke-width="5" stroke-linecap="round"/>
-  <circle cx="33" cy="31" r="7" fill="#fff"/>
-  <path d="M33 20v22m-11-11h22" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
-</svg>

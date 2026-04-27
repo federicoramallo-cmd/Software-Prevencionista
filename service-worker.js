@@ -1,21 +1,28 @@
 // service-worker.js - Service Worker para funcionalidad offline
 
-const CACHE_NAME = 'sso-cache-v2';
+const CACHE_NAME = 'sso-cache-v5';
 const urlsToCache = [
     '/',
     '/index.html',
     '/styles.css',
     '/app.js',
     '/empresas.json',
+    '/planificacion-inicial.json',
+    '/accidentes-inicial.json',
     '/manifest.json',
+    '/assets/logos/FRC%20Safety%20and%20Marine%20Solutions%20Logo.png',
     '/assets/logos/sso.svg',
-    '/assets/logos/constructora-norte.svg',
-    '/assets/logos/metalurgica-delta.svg',
-    '/assets/logos/logistica-sur.svg'
+    '/assets/logos/Logo Aplomo.jpeg',
+    '/assets/logos/Logo ESON.jpeg',
+    '/assets/logos/Logo MovilUno.jpg',
+    '/assets/logos/Logo Rabufer.jpg',
+    '/Gestión Gral de SYSO 2026 (Actividades, accidentes, etc.).xlsx',
+    '/RE 002 Registro de inspección de seguridad.doc'
 ];
 
 self.addEventListener('install', function(event) {
     console.log('Service Worker instalándose...');
+    self.skipWaiting();
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then(function(cache) {
@@ -28,18 +35,22 @@ self.addEventListener('install', function(event) {
 self.addEventListener('activate', function(event) {
     console.log('Service Worker activándose...');
     event.waitUntil(
-        caches.keys().then(function(cacheNames) {
-            return Promise.all(
-                cacheNames.map(function(cacheName) {
-                    if (cacheName !== CACHE_NAME) {
-                        console.log('Eliminando cache antigua:', cacheName);
-                        return caches.delete(cacheName);
-                    }
+        caches.keys()
+            .then(function(cacheNames) {
+                return Promise.all(
+                    cacheNames.map(function(cacheName) {
+                        if (cacheName !== CACHE_NAME) {
+                            console.log('Eliminando cache antigua:', cacheName);
+                            return caches.delete(cacheName);
+                        }
 
-                    return null;
-                })
-            );
-        })
+                        return null;
+                    })
+                );
+            })
+            .then(function() {
+                return self.clients.claim();
+            })
     );
 });
 

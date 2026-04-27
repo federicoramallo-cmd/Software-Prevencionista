@@ -1,0 +1,36 @@
+[
+    {
+        "id":  "excel-acc-4",
+        "origen":  "Excel",
+        "filaExcel":  4,
+        "item":  "1",
+        "anio":  "",
+        "fecha":  "",
+        "empresa":  "ESON",
+        "empresaId":  "eson",
+        "accidentado":  "Enrique Soria",
+        "descripcion":  "Rotura de puerta de vidrio",
+        "denunciaBse":  "",
+        "fechaAltaBse":  "",
+        "diasPerdidos":  "",
+        "investigacion":  "NO",
+        "actualizadoEn":  "2026-04-14T06:25:09.000-03:00"
+    },
+    {
+        "id":  "excel-acc-5",
+        "origen":  "Excel",
+        "filaExcel":  5,
+        "item":  "2",
+        "anio":  "",
+        "fecha":  "2026-02-11",
+        "empresa":  "MOVIL UNO",
+        "empresaId":  "movil-uno",
+        "accidentado":  "Guzmán Martinez",
+        "descripcion":  "Quemadura de cuello, hombro y nuca izquierdos; con fluido refrigerante de grúa",
+        "denunciaBse":  "",
+        "fechaAltaBse":  "",
+        "diasPerdidos":  "",
+        "investigacion":  "SI",
+        "actualizadoEn":  "2026-04-14T06:25:09.000-03:00"
+    }
+]
