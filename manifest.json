@@ -8,9 +8,9 @@
   "theme_color": "#0f766e",
   "icons": [
     {
-      "src": "assets/logos/sso.svg",
+      "src": "assets/logos/FRC%20Safety%20and%20Marine%20Solutions%20Logo.png",
       "sizes": "any",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]

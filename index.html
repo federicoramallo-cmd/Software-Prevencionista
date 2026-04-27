@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0f766e">
-    <link rel="icon" href="assets/logos/sso.svg" type="image/svg+xml">
+    <link rel="icon" href="assets/logos/FRC%20Safety%20and%20Marine%20Solutions%20Logo.png" type="image/png">
 </head>
 <body>
     <header class="app-header">
@@ -16,7 +16,7 @@
 
             <div class="brand-lockup">
                 <div class="logo-frame">
-                    <img id="app-logo" class="app-logo" src="assets/logos/sso.svg" alt="Logo Sistema SSO">
+                    <img id="app-logo" class="app-logo" src="assets/logos/FRC%20Safety%20and%20Marine%20Solutions%20Logo.png" alt="Logo FRC Safety and Marine Solutions">
                 </div>
                 <div>
                     <p id="company-kicker" class="company-kicker">Sistema Integral</p>
@@ -25,7 +25,10 @@
             </div>
 
             <div class="user-info">
+                <span class="user-name">Federico Ramallo</span>
                 <span>Técnico Prevencionista</span>
+                <span>Especialista en UNIT ISO 18000</span>
+                <span>Perito en Ingeniería Naval</span>
             </div>
         </div>
     </header>
@@ -36,6 +39,7 @@
             <li><a href="#inspecciones">Inspecciones</a></li>
             <li><a href="#documentos">Documentos</a></li>
             <li><a href="#planificacion">Planificación</a></li>
+            <li><a href="#accidentes">Accidentes</a></li>
             <li><a href="#analiticas">Analíticas</a></li>
             <li><a href="#configuracion">Configuración</a></li>
         </ul>
@@ -59,10 +63,10 @@
             </div>
 
             <div class="alerts">
-                <h3>Alertas Globales</h3>
+                <h3>Alertas Operativas</h3>
                 <div id="alerts-list" class="alerts-list">
                     <div class="alert-card">
-                        <p>Selecciona una empresa para ver sus alertas operativas.</p>
+                        <p>Cargando alertas operativas.</p>
                         <span class="status amarillo">Pendiente</span>
                     </div>
                 </div>
@@ -70,17 +74,28 @@
 
             <div class="stats">
                 <div class="stat-card">
-                    <h4>Inspecciones Hoy</h4>
-                    <p id="stat-inspections">0</p>
+                    <h4>Actividades Semana</h4>
+                    <p id="stat-week-activities">0</p>
                 </div>
                 <div class="stat-card">
-                    <h4>Documentos Generados</h4>
-                    <p id="stat-documents">0</p>
+                    <h4>Vencidas</h4>
+                    <p id="stat-overdue">0</p>
                 </div>
                 <div class="stat-card">
-                    <h4>IF Promedio</h4>
-                    <p id="stat-if">0.0</p>
+                    <h4>Accidentes</h4>
+                    <p id="stat-accidents">0</p>
                 </div>
+            </div>
+
+            <div class="weekly-board">
+                <div class="board-heading">
+                    <div>
+                        <p class="eyebrow">Planificación</p>
+                        <h3 id="weekly-title">Actividades de esta semana</h3>
+                    </div>
+                    <button type="button" class="btn-secondary compact-button" data-go-section="planificacion">Ver planificación</button>
+                </div>
+                <div id="weekly-activities-list" class="activity-card-grid" aria-live="polite"></div>
             </div>
         </section>
 
@@ -168,14 +183,156 @@
             </form>
         </section>
 
-        <section id="documentos" class="content-panel placeholder-section" hidden>
-            <h2>Documentos</h2>
-            <p>Los documentos generados desde RE 002 quedarán listados aquí.</p>
+        <section id="documentos" class="content-panel documentos" hidden>
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">Biblioteca</p>
+                    <h2>Documentos Descargables</h2>
+                </div>
+                <span class="company-pill" data-current-company>Sin empresa activa</span>
+            </div>
+
+            <div id="documents-list" class="documents-list"></div>
         </section>
 
-        <section id="planificacion" class="content-panel placeholder-section" hidden>
-            <h2>Planificación</h2>
-            <p>Seguimiento de actividades preventivas y vencimientos.</p>
+        <section id="planificacion" class="content-panel planificacion" hidden>
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">Plan anual SYSO</p>
+                    <h2>Planificación de Actividades</h2>
+                </div>
+                <div class="heading-actions">
+                    <button type="button" id="export-planning" class="btn-secondary compact-button">Exportar Excel</button>
+                    <button type="button" id="toggle-activity-form" class="btn-primary compact-button">Nueva actividad</button>
+                </div>
+            </div>
+
+            <form id="activity-form" class="activity-form" autocomplete="off" hidden>
+                <input type="hidden" id="activity-id">
+                <div class="form-grid planning-form-grid">
+                    <div class="form-group">
+                        <label for="activity-company">Empresa</label>
+                        <select id="activity-company" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="activity-date">Fecha programada</label>
+                        <input id="activity-date" type="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="activity-status">Estado</label>
+                        <select id="activity-status" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="activity-done-date">Fecha realizada</label>
+                        <input id="activity-done-date" type="date">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="activity-name">Actividad</label>
+                    <input id="activity-name" type="text" placeholder="Ej.: Inspección de seguridad" required>
+                </div>
+                <div class="form-group">
+                    <label for="activity-notes">Observaciones</label>
+                    <textarea id="activity-notes" rows="3" placeholder="Notas, actas enviadas, requisitos del cliente..."></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-large btn-primary">Guardar actividad</button>
+                    <button type="button" id="cancel-activity-edit" class="btn-large btn-secondary">Cancelar</button>
+                </div>
+            </form>
+
+            <div class="planning-toolbar">
+                <div class="form-group">
+                    <label for="planning-company-filter">Empresa</label>
+                    <select id="planning-company-filter"></select>
+                </div>
+                <div class="form-group">
+                    <label for="planning-status-filter">Estado</label>
+                    <select id="planning-status-filter"></select>
+                </div>
+                <div class="form-group">
+                    <label for="planning-week-filter">Semana</label>
+                    <input id="planning-week-filter" type="number" min="1" max="53" placeholder="Todas">
+                </div>
+                <div class="form-group">
+                    <label for="planning-search">Buscar</label>
+                    <input id="planning-search" type="search" placeholder="Empresa, actividad u observaciones">
+                </div>
+            </div>
+
+            <div class="table-shell">
+                <table class="excel-like-table planning-table">
+                    <colgroup>
+                        <col class="col-week">
+                        <col class="col-month">
+                        <col class="col-company">
+                        <col class="col-activity">
+                        <col class="col-date">
+                        <col class="col-date">
+                        <col class="col-status">
+                        <col class="col-notes">
+                        <col class="col-actions">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>SEMANA</th>
+                            <th>MES</th>
+                            <th>EMPRESA</th>
+                            <th>ACTIVIDAD</th>
+                            <th>FECHA PROGRAMADA</th>
+                            <th>FECHA REALIZADA</th>
+                            <th>ESTADO</th>
+                            <th>OBSERVACIONES</th>
+                            <th>ACCIONES</th>
+                        </tr>
+                    </thead>
+                    <tbody id="planning-table-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="accidentes" class="content-panel accidentes" hidden>
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">Seguimiento</p>
+                    <h2>Accidentes</h2>
+                </div>
+                <span id="accident-count-pill" class="company-pill">0 registros</span>
+            </div>
+
+            <div class="planning-toolbar compact-toolbar">
+                <div class="form-group">
+                    <label for="accident-company-filter">Empresa</label>
+                    <select id="accident-company-filter"></select>
+                </div>
+                <div class="form-group">
+                    <label for="accident-investigation-filter">Investigación</label>
+                    <select id="accident-investigation-filter">
+                        <option value="">Todas</option>
+                        <option value="SI">SI</option>
+                        <option value="NO">NO</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-shell">
+                <table class="excel-like-table accident-table">
+                    <thead>
+                        <tr>
+                            <th>ITEM</th>
+                            <th>FECHA</th>
+                            <th>EMPRESA</th>
+                            <th>ACCIDENTADO</th>
+                            <th>DESCRIPCIÓN DEL ACCIDENTE</th>
+                            <th>N° DENUNCIA BSE</th>
+                            <th>FECHA ALTA BSE</th>
+                            <th>DÍAS PERDIDOS</th>
+                            <th>INVESTIGACIÓN</th>
+                        </tr>
+                    </thead>
+                    <tbody id="accidents-table-body"></tbody>
+                </table>
+            </div>
         </section>
 
         <section id="analiticas" class="content-panel placeholder-section" hidden>
