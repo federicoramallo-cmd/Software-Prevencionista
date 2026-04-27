@@ -4,7 +4,7 @@ const DB_NAME = 'SSO_DB';
 const DB_VERSION = 5;
 const PLANIFICACION_INITIAL_URL = 'planificacion-inicial.json';
 const ACCIDENTES_INITIAL_URL = 'accidentes-inicial.json';
-const APP_LOGO_URL = 'assets/logos/FRC%20Safety%20and%20Marine%20Solutions%20Logo.png';
+const APP_LOGO_URL = 'assets/logos/frc-logo.png';
 
 const DEFAULT_BRAND = {
     colorCorporativo: '#0f766e',
