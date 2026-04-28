@@ -14,7 +14,7 @@
   {
     "id": "fewell",
     "nombre": "FEWELL",
-    "logoURL": "assets/logos/sso.svg",
+    "logoURL": "assets/logos/frc-logo.png",
     "colorCorporativo": "#4f46e5"
   },
   {
@@ -26,7 +26,7 @@
   {
     "id": "oceanus",
     "nombre": "OCEANUS",
-    "logoURL": "assets/logos/sso.svg",
+    "logoURL": "assets/logos/frc-logo.png",
     "colorCorporativo": "#0891b2"
   },
   {

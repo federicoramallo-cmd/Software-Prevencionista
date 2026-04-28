@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="title">
-  <title id="title">Sistema SSO</title>
-  <rect width="96" height="96" rx="20" fill="#0f766e"/>
-  <path d="M48 14l27 10v19c0 18-11.2 32.5-27 39-15.8-6.5-27-21-27-39V24l27-10z" fill="#ccfbf1"/>
-  <path d="M34 49l9 9 20-24" fill="none" stroke="#0f766e" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M28 75h40" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
-</svg>

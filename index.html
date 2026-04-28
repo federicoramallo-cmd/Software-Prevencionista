@@ -112,6 +112,19 @@
                 <input type="hidden" id="empresa-id" name="Empresa ID">
                 <input type="hidden" id="empresa-nombre" name="Empresa">
 
+                <div class="inspection-company-grid">
+                    <div class="form-group">
+                        <label for="inspection-company-select">Empresa</label>
+                        <select id="inspection-company-select" required>
+                            <option value="">Seleccionar empresa...</option>
+                        </select>
+                    </div>
+                    <div class="inspection-logo-card" aria-live="polite">
+                        <img id="inspection-company-logo" alt="Logo de empresa seleccionada" hidden>
+                        <span id="inspection-company-logo-empty">Logo de la empresa</span>
+                    </div>
+                </div>
+
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="fecha">Fecha</label>
