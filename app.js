@@ -1157,7 +1157,6 @@ function exportPlanningToExcel() {
 
 function setupInspections() {
     const form = document.getElementById('inspection-form');
-    const inspectionCompanySelect = document.getElementById('inspection-company-select');
     const captureBtn = document.getElementById('capture-photo');
     const photoInput = document.getElementById('photo-input');
     const photoPreview = document.getElementById('photo-preview');
@@ -1168,6 +1167,7 @@ function setupInspections() {
 
     if (!form || !canvas) return;
 
+    const inspectionCompanySelect = ensureInspectionCompanyControls(form);
     const context = canvas.getContext('2d');
     let currentPhoto = null;
     let drawing = false;
@@ -1271,10 +1271,10 @@ function setupInspections() {
 
     form.addEventListener('submit', async function(event) {
         event.preventDefault();
-        const inspectionCompany = getCompanyById(getValue('inspection-company-select'));
+        const inspectionCompany = getSelectedInspectionCompany();
 
         if (!inspectionCompany) {
-            alert('Selecciona la empresa de la inspeccion antes de guardar.');
+            alert('Selecciona una empresa en el Dashboard o en el formulario de inspeccion antes de guardar.');
             return;
         }
 
@@ -1310,6 +1310,47 @@ function setupInspections() {
         if (signatureField) signatureField.value = '';
         renderPhotoEmpty(photoPreview);
     }
+}
+
+function ensureInspectionCompanyControls(form) {
+    let select = document.getElementById('inspection-company-select');
+    if (select) return select;
+
+    const wrapper = document.createElement('div');
+    const group = document.createElement('div');
+    const label = document.createElement('label');
+    const logoCard = document.createElement('div');
+    const logo = document.createElement('img');
+    const emptyState = document.createElement('span');
+
+    select = document.createElement('select');
+    wrapper.className = 'inspection-company-grid';
+    group.className = 'form-group';
+    logoCard.className = 'inspection-logo-card';
+    label.htmlFor = 'inspection-company-select';
+    label.textContent = 'Empresa';
+    select.id = 'inspection-company-select';
+    select.required = true;
+    logo.id = 'inspection-company-logo';
+    logo.alt = 'Logo de empresa seleccionada';
+    logo.hidden = true;
+    emptyState.id = 'inspection-company-logo-empty';
+    emptyState.textContent = 'Logo de la empresa';
+
+    group.append(label, select);
+    logoCard.append(logo, emptyState);
+    wrapper.append(group, logoCard);
+
+    const firstFormGrid = form.querySelector('.form-grid');
+    form.insertBefore(wrapper, firstFormGrid || form.firstElementChild);
+
+    return select;
+}
+
+function getSelectedInspectionCompany() {
+    return getCompanyById(getValue('inspection-company-select')) ||
+        activeCompany ||
+        getCompanyById(getValue('empresa-id'));
 }
 
 function configureSignatureContext(context) {
