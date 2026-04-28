@@ -1,10 +1,14 @@
 // app.js - Logica principal de la aplicacion PWA
 
 const DB_NAME = 'SSO_DB';
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 const PLANIFICACION_INITIAL_URL = 'planificacion-inicial.json';
 const ACCIDENTES_INITIAL_URL = 'accidentes-inicial.json';
 const APP_LOGO_URL = 'assets/logos/frc-logo.png';
+const INSPECTION_TEMPLATE_TITLE = 'RE 002 Registro de inspeccion de seguridad';
+const PHOTO_MAX_WIDTH = 1600;
+const PHOTO_MAX_HEIGHT = 1200;
+const PHOTO_QUALITY = 0.82;
 
 const DEFAULT_BRAND = {
     colorCorporativo: '#0f766e',
@@ -17,9 +21,9 @@ const DEFAULT_BRAND = {
 const EMPRESAS_FALLBACK = [
     { id: 'aplomo', nombre: 'APLOMO', logoURL: 'assets/logos/Logo Aplomo.jpeg', colorCorporativo: '#0f766e' },
     { id: 'eson', nombre: 'ESON', logoURL: 'assets/logos/Logo ESON.jpeg', colorCorporativo: '#b45309' },
-    { id: 'fewell', nombre: 'FEWELL', logoURL: 'assets/logos/sso.svg', colorCorporativo: '#4f46e5' },
+    { id: 'fewell', nombre: 'FEWELL', logoURL: APP_LOGO_URL, colorCorporativo: '#4f46e5' },
     { id: 'movil-uno', nombre: 'MOVIL UNO', logoURL: 'assets/logos/Logo MovilUno.jpg', colorCorporativo: '#2563eb' },
-    { id: 'oceanus', nombre: 'OCEANUS', logoURL: 'assets/logos/sso.svg', colorCorporativo: '#0891b2' },
+    { id: 'oceanus', nombre: 'OCEANUS', logoURL: APP_LOGO_URL, colorCorporativo: '#0891b2' },
     { id: 'rabuffer', nombre: 'RABUFFER', logoURL: 'assets/logos/Logo Rabufer.jpg', colorCorporativo: '#0f172a' }
 ];
 
@@ -61,7 +65,6 @@ document.addEventListener('DOMContentLoaded', function() {
 async function initApp() {
     setupNavigation();
     setupSectionNavigation();
-    setupInspections();
     setupServiceWorker();
     setDefaultInspectionDate();
 
@@ -69,6 +72,7 @@ async function initApp() {
     empresas = await loadEmpresas();
 
     setupCompanySelector();
+    setupInspections();
     setupPlanningControls();
     setupAccidentControls();
     setupDocuments();
@@ -130,6 +134,10 @@ function setupSectionNavigation() {
         if (targetId === 'inspecciones') {
             requestAnimationFrame(refreshSignaturePad);
         }
+
+        if (targetId === 'documentos') {
+            renderDocuments();
+        }
     }
 
     navLinks.forEach(function(link) {
@@ -176,6 +184,7 @@ function setupCompanySelector() {
         activeCompany = selectedCompany || null;
         applyCompanyBrand(activeCompany);
         renderDashboard();
+        renderDocuments();
     });
 }
 
@@ -252,13 +261,52 @@ function applyCompanyBrand(company) {
 function updateInspectionCompanyFields(company) {
     const empresaId = document.getElementById('empresa-id');
     const empresaNombre = document.getElementById('empresa-nombre');
+    const inspectionCompanySelect = document.getElementById('inspection-company-select');
+    const selectedCompany = company || getCompanyById(inspectionCompanySelect ? inspectionCompanySelect.value : '');
+
+    if (inspectionCompanySelect) {
+        inspectionCompanySelect.value = selectedCompany ? selectedCompany.id : '';
+    }
 
     if (empresaId) {
-        empresaId.value = company ? company.id : '';
+        empresaId.value = selectedCompany ? selectedCompany.id : '';
     }
 
     if (empresaNombre) {
-        empresaNombre.value = company ? company.nombre : '';
+        empresaNombre.value = selectedCompany ? selectedCompany.nombre : '';
+    }
+
+    renderInspectionCompanyLogo(selectedCompany);
+}
+
+function renderInspectionCompanyLogo(company) {
+    const logo = document.getElementById('inspection-company-logo');
+    const emptyState = document.getElementById('inspection-company-logo-empty');
+    if (!logo || !emptyState) return;
+
+    if (!company) {
+        logo.hidden = true;
+        logo.removeAttribute('src');
+        emptyState.hidden = false;
+        return;
+    }
+
+    logo.src = company.logoURL || APP_LOGO_URL;
+    logo.alt = 'Logo ' + company.nombre;
+    logo.hidden = false;
+    emptyState.hidden = true;
+}
+
+function getCompanyById(companyId) {
+    return empresas.find(function(empresa) {
+        return empresa.id === companyId;
+    }) || null;
+}
+
+function syncDashboardCompanySelect(company) {
+    const companySelect = document.getElementById('company-select');
+    if (companySelect) {
+        companySelect.value = company ? company.id : '';
     }
 }
 
@@ -319,6 +367,7 @@ async function refreshOperationalData() {
     renderDashboard();
     renderPlanning();
     renderAccidents();
+    renderDocuments();
 }
 
 function reconcileRows(initialRows, storedRows) {
@@ -865,37 +914,199 @@ async function updateAccidentInvestigation(accidentId, investigation) {
 }
 
 function setupDocuments() {
+    const container = document.getElementById('documents-list');
+    if (container && container.dataset.bound !== 'true') {
+        container.dataset.bound = 'true';
+        container.addEventListener('click', handleDocumentAction);
+    }
+
     renderDocuments();
 }
 
-function renderDocuments() {
+async function renderDocuments() {
     const container = document.getElementById('documents-list');
     if (!container) return;
 
     container.replaceChildren();
+    container.append(createDocumentSection('Plantillas base', DOWNLOADABLE_DOCUMENTS.map(createTemplateDocumentCard)));
 
-    DOWNLOADABLE_DOCUMENTS.forEach(function(documentInfo) {
-        const card = document.createElement('article');
-        const icon = document.createElement('div');
-        const content = document.createElement('div');
-        const title = document.createElement('h3');
-        const description = document.createElement('p');
-        const action = document.createElement('a');
+    const generatedSection = document.createElement('section');
+    generatedSection.className = 'document-section';
+    const generatedTitle = document.createElement('h3');
+    generatedTitle.textContent = 'Documentos generados por empresa';
+    generatedSection.append(generatedTitle);
+    container.append(generatedSection);
 
-        card.className = 'document-card';
-        icon.className = 'document-type ' + documentInfo.extension;
-        icon.textContent = documentInfo.extension.toUpperCase();
-        title.textContent = documentInfo.title;
-        description.textContent = documentInfo.description;
-        action.href = documentInfo.href;
-        action.download = documentInfo.href;
-        action.className = 'btn-primary compact-button document-download';
-        action.textContent = 'Descargar ' + documentInfo.typeLabel;
+    let generatedDocuments = [];
+    try {
+        await dbReadyPromise;
+        generatedDocuments = await getAllFromIndexedDB('documentos');
+    } catch (error) {
+        const emptyState = document.createElement('div');
+        emptyState.className = 'empty-state';
+        emptyState.textContent = 'Los documentos generados se mostraran cuando la base local este disponible.';
+        generatedSection.append(emptyState);
+        return;
+    }
 
-        content.append(title, description, action);
-        card.append(icon, content);
-        container.append(card);
+    const inspectionDocuments = generatedDocuments
+        .filter(function(documentInfo) {
+            return documentInfo && documentInfo.tipo === 'inspeccion';
+        })
+        .sort(function(a, b) {
+            return String(b.creadoEn || '').localeCompare(String(a.creadoEn || ''));
+        });
+
+    if (inspectionDocuments.length === 0) {
+        const emptyState = document.createElement('div');
+        emptyState.className = 'empty-state';
+        emptyState.textContent = 'Todavia no hay inspecciones guardadas como documentos.';
+        generatedSection.append(emptyState);
+        return;
+    }
+
+    const documentsByCompany = groupDocumentsByCompany(inspectionDocuments);
+    documentsByCompany.forEach(function(group) {
+        const companySection = document.createElement('article');
+        const companyTitle = document.createElement('h4');
+        const documentGrid = document.createElement('div');
+
+        companySection.className = 'document-company-group';
+        companyTitle.textContent = group.companyName;
+        documentGrid.className = 'documents-list compact-documents-list';
+
+        group.documents.forEach(function(documentInfo) {
+            documentGrid.append(createGeneratedDocumentCard(documentInfo));
+        });
+
+        companySection.append(companyTitle, documentGrid);
+        generatedSection.append(companySection);
     });
+}
+
+function createDocumentSection(titleText, cards) {
+    const section = document.createElement('section');
+    const title = document.createElement('h3');
+    const grid = document.createElement('div');
+
+    section.className = 'document-section';
+    grid.className = 'documents-list compact-documents-list';
+    title.textContent = titleText;
+
+    cards.forEach(function(card) {
+        grid.append(card);
+    });
+
+    section.append(title, grid);
+    return section;
+}
+
+function createTemplateDocumentCard(documentInfo) {
+    const card = document.createElement('article');
+    const icon = document.createElement('div');
+    const content = document.createElement('div');
+    const title = document.createElement('h3');
+    const description = document.createElement('p');
+    const action = document.createElement('a');
+
+    card.className = 'document-card';
+    icon.className = 'document-type ' + documentInfo.extension;
+    icon.textContent = documentInfo.extension.toUpperCase();
+    title.textContent = documentInfo.title;
+    description.textContent = documentInfo.description;
+    action.href = documentInfo.href;
+    action.download = documentInfo.href;
+    action.className = 'btn-primary compact-button document-download';
+    action.textContent = 'Descargar ' + documentInfo.typeLabel;
+
+    content.append(title, description, action);
+    card.append(icon, content);
+    return card;
+}
+
+function createGeneratedDocumentCard(documentInfo) {
+    const card = document.createElement('article');
+    const icon = document.createElement('div');
+    const content = document.createElement('div');
+    const title = document.createElement('h3');
+    const description = document.createElement('p');
+    const actions = document.createElement('div');
+
+    card.className = 'document-card';
+    icon.className = 'document-type doc';
+    icon.textContent = 'RE';
+    title.textContent = documentInfo.titulo || INSPECTION_TEMPLATE_TITLE;
+    description.textContent = [
+        documentInfo.empresaNombre,
+        formatDate(documentInfo.fecha),
+        documentInfo.obra
+    ].filter(Boolean).join(' - ');
+    actions.className = 'document-actions';
+
+    actions.append(
+        createDocumentButton('Ver', 'open', documentInfo.id, 'btn-secondary'),
+        createDocumentButton('Word', 'download', documentInfo.id, 'btn-primary'),
+        createDocumentButton('PDF', 'print', documentInfo.id, 'btn-secondary'),
+        createDocumentButton('Compartir', 'share', documentInfo.id, 'btn-secondary')
+    );
+
+    content.append(title, description, actions);
+    card.append(icon, content);
+    return card;
+}
+
+function createDocumentButton(label, action, documentId, toneClass) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = (toneClass || 'btn-secondary') + ' compact-button document-download';
+    button.dataset.documentAction = action;
+    button.dataset.documentId = String(documentId);
+    button.textContent = label;
+    return button;
+}
+
+function groupDocumentsByCompany(documents) {
+    const grouped = new Map();
+
+    documents.forEach(function(documentInfo) {
+        const companyId = documentInfo.empresaId || 'sin-empresa';
+        if (!grouped.has(companyId)) {
+            grouped.set(companyId, {
+                companyName: documentInfo.empresaNombre || 'Sin empresa',
+                documents: []
+            });
+        }
+        grouped.get(companyId).documents.push(documentInfo);
+    });
+
+    return Array.from(grouped.values()).sort(function(a, b) {
+        return String(a.companyName || '').localeCompare(String(b.companyName || ''));
+    });
+}
+
+async function handleDocumentAction(event) {
+    const button = event.target.closest('[data-document-action]');
+    if (!button) return;
+
+    event.preventDefault();
+    const documentId = Number(button.dataset.documentId);
+    const action = button.dataset.documentAction;
+    const documentInfo = await getFromIndexedDB('documentos', documentId);
+
+    if (!documentInfo) {
+        alert('No se encontro el documento guardado.');
+        return;
+    }
+
+    if (action === 'open') {
+        openGeneratedDocument(documentInfo, false);
+    } else if (action === 'download') {
+        downloadGeneratedDocument(documentInfo);
+    } else if (action === 'print') {
+        openGeneratedDocument(documentInfo, true);
+    } else if (action === 'share') {
+        shareGeneratedDocument(documentInfo);
+    }
 }
 
 function exportPlanningToExcel() {
@@ -946,6 +1157,7 @@ function exportPlanningToExcel() {
 
 function setupInspections() {
     const form = document.getElementById('inspection-form');
+    const inspectionCompanySelect = document.getElementById('inspection-company-select');
     const captureBtn = document.getElementById('capture-photo');
     const photoInput = document.getElementById('photo-input');
     const photoPreview = document.getElementById('photo-preview');
@@ -960,6 +1172,24 @@ function setupInspections() {
     let currentPhoto = null;
     let drawing = false;
     let hasSignature = false;
+
+    if (inspectionCompanySelect) {
+        fillCompanySelect(inspectionCompanySelect, {
+            includeAll: true,
+            allLabel: 'Seleccionar empresa...',
+            selectedValue: activeCompany ? activeCompany.id : ''
+        });
+        updateInspectionCompanyFields(activeCompany);
+
+        inspectionCompanySelect.addEventListener('change', function() {
+            const selectedCompany = getCompanyById(inspectionCompanySelect.value);
+            activeCompany = selectedCompany || null;
+            syncDashboardCompanySelect(activeCompany);
+            applyCompanyBrand(activeCompany);
+            renderDashboard();
+            renderDocuments();
+        });
+    }
 
     refreshSignaturePad = function() {
         resizeSignatureCanvas(canvas, context, hasSignature);
@@ -1002,12 +1232,24 @@ function setupInspections() {
             const file = event.target.files[0];
             if (!file) return;
 
-            const reader = new FileReader();
-            reader.addEventListener('load', function(readerEvent) {
-                currentPhoto = readerEvent.target.result;
-                renderPhotoPreview(photoPreview, currentPhoto, file.name);
-            });
-            reader.readAsDataURL(file);
+            renderPhotoLoading(photoPreview);
+            captureBtn.disabled = true;
+
+            compressImageFile(file)
+                .then(function(photoData) {
+                    currentPhoto = photoData;
+                    renderPhotoPreview(photoPreview, currentPhoto, file.name);
+                })
+                .catch(function(error) {
+                    console.error('Error procesando foto:', error);
+                    alert('No se pudo procesar la foto. Intente cargar otra imagen.');
+                    currentPhoto = null;
+                    renderPhotoEmpty(photoPreview);
+                })
+                .finally(function() {
+                    captureBtn.disabled = false;
+                    photoInput.value = '';
+                });
         });
     }
 
@@ -1029,10 +1271,10 @@ function setupInspections() {
 
     form.addEventListener('submit', async function(event) {
         event.preventDefault();
+        const inspectionCompany = getCompanyById(getValue('inspection-company-select'));
 
-        if (!activeCompany) {
-            alert('Selecciona una empresa en el Dashboard antes de guardar la inspección.');
-            document.querySelector('a[href="#dashboard"]').click();
+        if (!inspectionCompany) {
+            alert('Selecciona la empresa de la inspeccion antes de guardar.');
             return;
         }
 
@@ -1047,10 +1289,11 @@ function setupInspections() {
         }
 
         try {
-            await saveInspection(form, currentPhoto, signatureData);
-            alert('Inspección guardada exitosamente.');
+            await saveInspection(form, currentPhoto, signatureData, inspectionCompany);
+            await renderDocuments();
+            alert('Inspeccion guardada. El reporte quedo disponible en Documentos.');
             resetInspectionForm();
-            document.querySelector('a[href="#dashboard"]').click();
+            document.querySelector('a[href="#documentos"]').click();
         } catch (error) {
             console.error('Error guardando inspección:', error);
             alert('Error al guardar la inspección. Intente nuevamente.');
@@ -1065,11 +1308,7 @@ function setupInspections() {
         hasSignature = false;
         currentPhoto = null;
         if (signatureField) signatureField.value = '';
-        if (photoPreview) {
-            const emptyState = document.createElement('span');
-            emptyState.textContent = 'Sin evidencia cargada';
-            photoPreview.replaceChildren(emptyState);
-        }
+        renderPhotoEmpty(photoPreview);
     }
 }
 
@@ -1121,8 +1360,65 @@ function renderPhotoPreview(container, photoData, fileName) {
     container.replaceChildren(image, caption);
 }
 
-async function saveInspection(form, currentPhoto, signatureData) {
+function renderPhotoLoading(container) {
+    if (!container) return;
+    const loadingState = document.createElement('span');
+    loadingState.textContent = 'Procesando evidencia...';
+    container.replaceChildren(loadingState);
+}
+
+function renderPhotoEmpty(container) {
+    if (!container) return;
+    const emptyState = document.createElement('span');
+    emptyState.textContent = 'Sin evidencia cargada';
+    container.replaceChildren(emptyState);
+}
+
+function compressImageFile(file) {
+    return new Promise(function(resolve, reject) {
+        if (!file || !file.type || !file.type.startsWith('image/')) {
+            reject(new Error('El archivo seleccionado no es una imagen.'));
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onerror = function() {
+            reject(reader.error || new Error('No se pudo leer la imagen.'));
+        };
+        reader.onload = function(readerEvent) {
+            const image = new Image();
+            image.onerror = function() {
+                reject(new Error('No se pudo cargar la imagen.'));
+            };
+            image.onload = function() {
+                const size = getContainedImageSize(image.width, image.height, PHOTO_MAX_WIDTH, PHOTO_MAX_HEIGHT);
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+
+                canvas.width = size.width;
+                canvas.height = size.height;
+                context.drawImage(image, 0, 0, size.width, size.height);
+
+                resolve(canvas.toDataURL('image/jpeg', PHOTO_QUALITY));
+            };
+            image.src = readerEvent.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+function getContainedImageSize(width, height, maxWidth, maxHeight) {
+    const ratio = Math.min(maxWidth / width, maxHeight / height, 1);
+    return {
+        width: Math.max(1, Math.round(width * ratio)),
+        height: Math.max(1, Math.round(height * ratio))
+    };
+}
+
+async function saveInspection(form, currentPhoto, signatureData, inspectionCompany) {
+    updateInspectionCompanyFields(inspectionCompany);
     const formData = new FormData(form);
+    const logoEmpresa = await imageUrlToDataUrl(inspectionCompany.logoURL || APP_LOGO_URL);
     const camposRE002 = {
         'Empresa': formData.get('Empresa'),
         'Fecha': formData.get('Fecha'),
@@ -1139,8 +1435,10 @@ async function saveInspection(form, currentPhoto, signatureData) {
     const inspectionData = {
         id: Date.now(),
         plantilla: 'RE 002 Registro de inspección de seguridad',
-        empresaId: activeCompany.id,
-        empresaNombre: activeCompany.nombre,
+        empresaId: inspectionCompany.id,
+        empresaNombre: inspectionCompany.nombre,
+        empresaLogoURL: inspectionCompany.logoURL || APP_LOGO_URL,
+        empresaLogoDataURL: logoEmpresa,
         camposRE002,
         fecha: camposRE002.Fecha,
         obra: camposRE002.Obra,
@@ -1151,7 +1449,209 @@ async function saveInspection(form, currentPhoto, signatureData) {
         sincronizado: false
     };
 
-    return saveToIndexedDB('inspecciones', inspectionData);
+    const reportHtml = createInspectionReportHtml(inspectionData);
+    const documentData = {
+        id: inspectionData.id,
+        tipo: 'inspeccion',
+        tipoLabel: 'Inspeccion RE 002',
+        titulo: INSPECTION_TEMPLATE_TITLE,
+        empresaId: inspectionData.empresaId,
+        empresaNombre: inspectionData.empresaNombre,
+        fecha: inspectionData.fecha,
+        obra: inspectionData.obra,
+        inspectionId: inspectionData.id,
+        filename: createInspectionFilename(inspectionData),
+        mimeType: 'application/msword;charset=utf-8',
+        html: reportHtml,
+        creadoEn: inspectionData.creadoEn
+    };
+
+    await saveToIndexedDB('inspecciones', inspectionData);
+    await saveToIndexedDB('documentos', documentData);
+
+    return {
+        inspeccion: inspectionData,
+        documento: documentData
+    };
+}
+
+async function imageUrlToDataUrl(url) {
+    try {
+        const response = await fetch(url, { cache: 'no-store' });
+        if (!response.ok) {
+            throw new Error('No se pudo cargar logo');
+        }
+        const blob = await response.blob();
+        return await blobToDataUrl(blob);
+    } catch (error) {
+        console.warn('No se pudo incrustar el logo de empresa:', error);
+        return '';
+    }
+}
+
+function blobToDataUrl(blob) {
+    return new Promise(function(resolve, reject) {
+        const reader = new FileReader();
+        reader.onerror = function() {
+            reject(reader.error || new Error('No se pudo leer el archivo.'));
+        };
+        reader.onload = function(event) {
+            resolve(event.target.result);
+        };
+        reader.readAsDataURL(blob);
+    });
+}
+
+function createInspectionReportHtml(inspectionData) {
+    const fields = inspectionData.camposRE002 || {};
+    const inspectionAuthor = getReportField(fields, 'Inspeccion realizada por');
+    const observation = getReportField(fields, 'Observacion');
+    const recommendation = getReportField(fields, 'Recomendacion');
+    const logoMarkup = inspectionData.empresaLogoDataURL
+        ? '<img src="' + escapeAttribute(inspectionData.empresaLogoDataURL) + '" alt="Logo ' + escapeAttribute(inspectionData.empresaNombre) + '">'
+        : escapeHtml(inspectionData.empresaNombre);
+    const photoMarkup = inspectionData.evidenciaFotografica
+        ? '<img class="report-photo" src="' + escapeAttribute(inspectionData.evidenciaFotografica) + '" alt="Evidencia fotografica">'
+        : '<span class="muted">Sin evidencia fotografica</span>';
+    const signatureMarkup = inspectionData.firma
+        ? '<img class="report-signature" src="' + escapeAttribute(inspectionData.firma) + '" alt="Firma">'
+        : '<span class="muted">Sin firma</span>';
+
+    return [
+        '<!DOCTYPE html>',
+        '<html lang="es">',
+        '<head>',
+        '<meta charset="UTF-8">',
+        '<title>' + escapeHtml(INSPECTION_TEMPLATE_TITLE) + '</title>',
+        '<style>',
+        '@page{size:A4;margin:14mm;}',
+        '*{box-sizing:border-box;}',
+        'body{font-family:Arial,Helvetica,sans-serif;color:#111827;font-size:11pt;line-height:1.35;margin:0;}',
+        'table{width:100%;border-collapse:collapse;}',
+        'td,th{border:1px solid #111827;padding:6px;vertical-align:top;}',
+        '.header-logo{width:28%;height:82px;text-align:center;vertical-align:middle;}',
+        '.header-logo img{max-width:155px;max-height:70px;object-fit:contain;}',
+        '.header-title{text-align:center;font-weight:700;font-size:14pt;text-transform:uppercase;}',
+        '.header-meta{width:22%;font-size:9pt;}',
+        '.label{width:26%;background:#eef2f7;font-weight:700;}',
+        '.section-title{margin-top:12px;background:#111827;color:#fff;font-weight:700;text-transform:uppercase;}',
+        '.large-cell{min-height:90px;white-space:pre-wrap;}',
+        '.report-photo{display:block;max-width:100%;max-height:360px;margin:0 auto;object-fit:contain;}',
+        '.report-signature{display:block;max-width:260px;max-height:120px;margin:0 auto;object-fit:contain;}',
+        '.muted{color:#64748b;font-weight:700;}',
+        '.signature-box{height:145px;text-align:center;vertical-align:middle;}',
+        '.footer-note{margin-top:12px;color:#64748b;font-size:9pt;}',
+        '</style>',
+        '</head>',
+        '<body>',
+        '<table>',
+        '<tr>',
+        '<td class="header-logo" rowspan="2">' + logoMarkup + '</td>',
+        '<td class="header-title">Registro de inspeccion de seguridad</td>',
+        '<td class="header-meta">Codigo: RE 002<br>Fecha: ' + escapeHtml(formatDate(inspectionData.fecha)) + '</td>',
+        '</tr>',
+        '<tr>',
+        '<td colspan="2">Empresa: <strong>' + escapeHtml(inspectionData.empresaNombre) + '</strong></td>',
+        '</tr>',
+        '</table>',
+        '<table style="margin-top:12px;">',
+        '<tr><td class="label">Fecha</td><td>' + escapeHtml(formatDate(fields.Fecha)) + '</td></tr>',
+        '<tr><td class="label">Obra</td><td>' + escapeHtml(fields.Obra) + '</td></tr>',
+        '<tr><td class="label">Sector de la Obra</td><td>' + escapeHtml(fields['Sector de la Obra']) + '</td></tr>',
+        '<tr><td class="label">Inspeccion realizada por</td><td>' + escapeHtml(inspectionAuthor) + '</td></tr>',
+        '<tr><td class="section-title" colspan="2">Observacion</td></tr>',
+        '<tr><td class="large-cell" colspan="2">' + escapeHtml(observation) + '</td></tr>',
+        '<tr><td class="section-title" colspan="2">Recomendacion</td></tr>',
+        '<tr><td class="large-cell" colspan="2">' + escapeHtml(recommendation) + '</td></tr>',
+        '<tr><td class="section-title" colspan="2">Evidencia fotografica</td></tr>',
+        '<tr><td colspan="2">' + photoMarkup + '</td></tr>',
+        '<tr><td class="label">Encargado presente en obra</td><td>' + escapeHtml(fields['Encargado presente en obra']) + '</td></tr>',
+        '<tr><td class="section-title" colspan="2">Firma</td></tr>',
+        '<tr><td class="signature-box" colspan="2">' + signatureMarkup + '</td></tr>',
+        '</table>',
+        '<p class="footer-note">Documento generado desde Sistema SSO usando la plantilla base RE 002.</p>',
+        '</body>',
+        '</html>'
+    ].join('');
+}
+
+function createInspectionFilename(inspectionData) {
+    return [
+        'RE-002',
+        inspectionData.empresaNombre,
+        inspectionData.fecha,
+        inspectionData.obra
+    ].filter(Boolean).map(slugifyFilenamePart).join('-') + '.doc';
+}
+
+function getReportField(fields, label) {
+    const normalizedLabel = normalizeText(label);
+    const key = Object.keys(fields).find(function(fieldKey) {
+        return normalizeText(fieldKey) === normalizedLabel;
+    });
+
+    return key ? fields[key] : '';
+}
+
+function slugifyFilenamePart(value) {
+    return normalizeText(value)
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 42) || 'documento';
+}
+
+function openGeneratedDocument(documentInfo, printWhenReady) {
+    const html = printWhenReady ? createPrintableHtml(documentInfo.html) : documentInfo.html;
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const opened = window.open(url, '_blank');
+
+    if (!opened) {
+        downloadBlob(blob, (documentInfo.filename || 're-002-inspeccion.doc').replace(/\.doc$/i, '.html'));
+    }
+
+    setTimeout(function() {
+        URL.revokeObjectURL(url);
+    }, 60000);
+}
+
+function createPrintableHtml(html) {
+    const script = '<script>window.addEventListener("load",function(){setTimeout(function(){window.print();},350);});<\/script>';
+    return html.replace('</body>', script + '</body>');
+}
+
+function downloadGeneratedDocument(documentInfo) {
+    const blob = new Blob([documentInfo.html], { type: documentInfo.mimeType || 'application/msword;charset=utf-8' });
+    downloadBlob(blob, documentInfo.filename || 're-002-inspeccion.doc');
+}
+
+async function shareGeneratedDocument(documentInfo) {
+    const blob = new Blob([documentInfo.html], { type: documentInfo.mimeType || 'application/msword;charset=utf-8' });
+    const file = new File([blob], documentInfo.filename || 're-002-inspeccion.doc', { type: blob.type });
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+            title: documentInfo.titulo || INSPECTION_TEMPLATE_TITLE,
+            text: documentInfo.empresaNombre || '',
+            files: [file]
+        });
+        return;
+    }
+
+    downloadBlob(blob, file.name);
+    alert('El navegador no permite compartir archivos directamente. Se descargo el Word para que puedas enviarlo.');
+}
+
+function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.href = url;
+    link.download = filename;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
 }
 
 function setDefaultInspectionDate() {
@@ -1196,7 +1696,10 @@ function initIndexedDB() {
             ensureIndex(inspeccionesStore, 'fecha', 'fecha');
             ensureIndex(inspeccionesStore, 'sectorObra', 'sectorObra');
 
-            ensureObjectStore(event, 'documentos', { keyPath: 'id', autoIncrement: true });
+            const documentosStore = ensureObjectStore(event, 'documentos', { keyPath: 'id', autoIncrement: true });
+            ensureIndex(documentosStore, 'empresaId', 'empresaId');
+            ensureIndex(documentosStore, 'tipo', 'tipo');
+            ensureIndex(documentosStore, 'creadoEn', 'creadoEn');
 
             const planificacionStore = ensureObjectStore(event, 'planificacion', { keyPath: 'id', autoIncrement: true });
             ensureIndex(planificacionStore, 'empresaId', 'empresaId');
@@ -1276,6 +1779,24 @@ async function getAllFromIndexedDB(storeName) {
 
         request.onsuccess = function() {
             resolve(request.result || []);
+        };
+
+        request.onerror = function() {
+            reject(request.error);
+        };
+    });
+}
+
+async function getFromIndexedDB(storeName, key) {
+    const database = db || await dbReadyPromise;
+
+    return new Promise(function(resolve, reject) {
+        const transaction = database.transaction([storeName], 'readonly');
+        const store = transaction.objectStore(storeName);
+        const request = store.get(key);
+
+        request.onsuccess = function() {
+            resolve(request.result || null);
         };
 
         request.onerror = function() {
@@ -1428,6 +1949,10 @@ function escapeHtml(value) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+}
+
+function escapeAttribute(value) {
+    return escapeHtml(value).replace(/`/g, '&#096;');
 }
 
 function getValue(id) {

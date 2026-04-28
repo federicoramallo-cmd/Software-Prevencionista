@@ -1,6 +1,6 @@
 // service-worker.js - Service Worker para funcionalidad offline
 
-const CACHE_NAME = 'sso-cache-v6';
+const CACHE_NAME = 'sso-cache-v8';
 const urlsToCache = [
     '/',
     '/index.html',
@@ -11,7 +11,6 @@ const urlsToCache = [
     '/accidentes-inicial.json',
     '/manifest.json',
     '/assets/logos/frc-logo.png',
-    '/assets/logos/sso.svg',
     '/assets/logos/Logo Aplomo.jpeg',
     '/assets/logos/Logo ESON.jpeg',
     '/assets/logos/Logo MovilUno.jpg',
