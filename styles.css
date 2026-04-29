@@ -718,7 +718,14 @@ textarea:focus {
     background: var(--surface-muted);
 }
 
-#photo-input {
+.evidence-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+#photo-input,
+#photo-library-input {
     display: none;
 }
 
@@ -986,6 +993,10 @@ textarea:focus {
 
     .planning-toolbar,
     .compact-toolbar {
+        grid-template-columns: 1fr;
+    }
+
+    .evidence-actions {
         grid-template-columns: 1fr;
     }
 

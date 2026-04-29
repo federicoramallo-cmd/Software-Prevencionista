@@ -8,13 +8,13 @@
   {
     "id": "eson",
     "nombre": "ESON",
-    "logoURL": "assets/logos/Logo ESON.jpeg",
+    "logoURL": "assets/logos/ESON.jpg",
     "colorCorporativo": "#b45309"
   },
   {
     "id": "fewell",
     "nombre": "FEWELL",
-    "logoURL": "assets/logos/frc-logo.png",
+    "logoURL": "assets/logos/FFEWELL.jpg",
     "colorCorporativo": "#4f46e5"
   },
   {
@@ -26,7 +26,7 @@
   {
     "id": "oceanus",
     "nombre": "OCEANUS",
-    "logoURL": "assets/logos/frc-logo.png",
+    "logoURL": "assets/logos/OCEANUS.jpg",
     "colorCorporativo": "#0891b2"
   },
   {

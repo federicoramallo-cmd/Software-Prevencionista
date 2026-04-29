@@ -20,10 +20,10 @@ const DEFAULT_BRAND = {
 
 const EMPRESAS_FALLBACK = [
     { id: 'aplomo', nombre: 'APLOMO', logoURL: 'assets/logos/Logo Aplomo.jpeg', colorCorporativo: '#0f766e' },
-    { id: 'eson', nombre: 'ESON', logoURL: 'assets/logos/Logo ESON.jpeg', colorCorporativo: '#b45309' },
-    { id: 'fewell', nombre: 'FEWELL', logoURL: APP_LOGO_URL, colorCorporativo: '#4f46e5' },
+    { id: 'eson', nombre: 'ESON', logoURL: 'assets/logos/ESON.jpg', colorCorporativo: '#b45309' },
+    { id: 'fewell', nombre: 'FEWELL', logoURL: 'assets/logos/FFEWELL.jpg', colorCorporativo: '#4f46e5' },
     { id: 'movil-uno', nombre: 'MOVIL UNO', logoURL: 'assets/logos/Logo MovilUno.jpg', colorCorporativo: '#2563eb' },
-    { id: 'oceanus', nombre: 'OCEANUS', logoURL: APP_LOGO_URL, colorCorporativo: '#0891b2' },
+    { id: 'oceanus', nombre: 'OCEANUS', logoURL: 'assets/logos/OCEANUS.jpg', colorCorporativo: '#0891b2' },
     { id: 'rabuffer', nombre: 'RABUFFER', logoURL: 'assets/logos/Logo Rabufer.jpg', colorCorporativo: '#0f172a' }
 ];
 
@@ -291,7 +291,15 @@ function renderInspectionCompanyLogo(company) {
         return;
     }
 
-    logo.src = company.logoURL || APP_LOGO_URL;
+    if (!company.logoURL) {
+        logo.hidden = true;
+        logo.removeAttribute('src');
+        emptyState.hidden = false;
+        emptyState.textContent = company.nombre;
+        return;
+    }
+
+    logo.src = company.logoURL;
     logo.alt = 'Logo ' + company.nombre;
     logo.hidden = false;
     emptyState.hidden = true;
@@ -1158,7 +1166,9 @@ function exportPlanningToExcel() {
 function setupInspections() {
     const form = document.getElementById('inspection-form');
     const captureBtn = document.getElementById('capture-photo');
+    const uploadBtn = document.getElementById('upload-photo');
     const photoInput = document.getElementById('photo-input');
+    const photoLibraryInput = document.getElementById('photo-library-input');
     const photoPreview = document.getElementById('photo-preview');
     const canvas = document.getElementById('signature-canvas');
     const signatureField = document.getElementById('firma-encargado');
@@ -1229,27 +1239,25 @@ function setupInspections() {
         });
 
         photoInput.addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+            processSelectedPhoto(event.target.files[0], photoPreview, function(photoData) {
+                currentPhoto = photoData;
+            }).finally(function() {
+                photoInput.value = '';
+            });
+        });
+    }
 
-            renderPhotoLoading(photoPreview);
-            captureBtn.disabled = true;
+    if (uploadBtn && photoLibraryInput) {
+        uploadBtn.addEventListener('click', function() {
+            photoLibraryInput.click();
+        });
 
-            compressImageFile(file)
-                .then(function(photoData) {
-                    currentPhoto = photoData;
-                    renderPhotoPreview(photoPreview, currentPhoto, file.name);
-                })
-                .catch(function(error) {
-                    console.error('Error procesando foto:', error);
-                    alert('No se pudo procesar la foto. Intente cargar otra imagen.');
-                    currentPhoto = null;
-                    renderPhotoEmpty(photoPreview);
-                })
-                .finally(function() {
-                    captureBtn.disabled = false;
-                    photoInput.value = '';
-                });
+        photoLibraryInput.addEventListener('change', function(event) {
+            processSelectedPhoto(event.target.files[0], photoPreview, function(photoData) {
+                currentPhoto = photoData;
+            }).finally(function() {
+                photoLibraryInput.value = '';
+            });
         });
     }
 
@@ -1310,6 +1318,33 @@ function setupInspections() {
         if (signatureField) signatureField.value = '';
         renderPhotoEmpty(photoPreview);
     }
+}
+
+function processSelectedPhoto(file, photoPreview, setCurrentPhoto) {
+    if (!file) return Promise.resolve();
+
+    const captureBtn = document.getElementById('capture-photo');
+    const uploadBtn = document.getElementById('upload-photo');
+
+    renderPhotoLoading(photoPreview);
+    if (captureBtn) captureBtn.disabled = true;
+    if (uploadBtn) uploadBtn.disabled = true;
+
+    return compressImageFile(file)
+        .then(function(photoData) {
+            setCurrentPhoto(photoData);
+            renderPhotoPreview(photoPreview, photoData, file.name);
+        })
+        .catch(function(error) {
+            console.error('Error procesando foto:', error);
+            alert('No se pudo procesar la foto. Intente cargar otra imagen.');
+            setCurrentPhoto(null);
+            renderPhotoEmpty(photoPreview);
+        })
+        .finally(function() {
+            if (captureBtn) captureBtn.disabled = false;
+            if (uploadBtn) uploadBtn.disabled = false;
+        });
 }
 
 function ensureInspectionCompanyControls(form) {
@@ -1459,12 +1494,11 @@ function getContainedImageSize(width, height, maxWidth, maxHeight) {
 async function saveInspection(form, currentPhoto, signatureData, inspectionCompany) {
     updateInspectionCompanyFields(inspectionCompany);
     const formData = new FormData(form);
-    const logoEmpresa = await imageUrlToDataUrl(inspectionCompany.logoURL || APP_LOGO_URL);
+    const logoEmpresa = inspectionCompany.logoURL ? await imageUrlToDataUrl(inspectionCompany.logoURL) : '';
     const camposRE002 = {
         'Empresa': formData.get('Empresa'),
         'Fecha': formData.get('Fecha'),
         'Obra': formData.get('Obra'),
-        'Sector de la Obra': formData.get('Sector de la Obra'),
         'Inspección realizada por': formData.get('Inspección realizada por'),
         'Observación': formData.get('Observación'),
         'Recomendación': formData.get('Recomendación'),
@@ -1478,12 +1512,11 @@ async function saveInspection(form, currentPhoto, signatureData, inspectionCompa
         plantilla: 'RE 002 Registro de inspección de seguridad',
         empresaId: inspectionCompany.id,
         empresaNombre: inspectionCompany.nombre,
-        empresaLogoURL: inspectionCompany.logoURL || APP_LOGO_URL,
+        empresaLogoURL: inspectionCompany.logoURL || '',
         empresaLogoDataURL: logoEmpresa,
         camposRE002,
         fecha: camposRE002.Fecha,
         obra: camposRE002.Obra,
-        sectorObra: camposRE002['Sector de la Obra'],
         evidenciaFotografica: currentPhoto,
         firma: signatureData,
         creadoEn: new Date().toISOString(),
@@ -1575,6 +1608,8 @@ function createInspectionReportHtml(inspectionData) {
         '.header-title{text-align:center;font-weight:700;font-size:14pt;text-transform:uppercase;}',
         '.header-meta{width:22%;font-size:9pt;}',
         '.label{width:26%;background:#eef2f7;font-weight:700;}',
+        '.compact-info .label{width:15%;}',
+        '.compact-info .value{width:35%;}',
         '.section-title{margin-top:12px;background:#111827;color:#fff;font-weight:700;text-transform:uppercase;}',
         '.large-cell{min-height:90px;white-space:pre-wrap;}',
         '.report-photo{display:block;max-width:100%;max-height:360px;margin:0 auto;object-fit:contain;}',
@@ -1587,28 +1622,23 @@ function createInspectionReportHtml(inspectionData) {
         '<body>',
         '<table>',
         '<tr>',
-        '<td class="header-logo" rowspan="2">' + logoMarkup + '</td>',
+        '<td class="header-logo">' + logoMarkup + '</td>',
         '<td class="header-title">Registro de inspeccion de seguridad</td>',
         '<td class="header-meta">Codigo: RE 002<br>Fecha: ' + escapeHtml(formatDate(inspectionData.fecha)) + '</td>',
         '</tr>',
-        '<tr>',
-        '<td colspan="2">Empresa: <strong>' + escapeHtml(inspectionData.empresaNombre) + '</strong></td>',
-        '</tr>',
         '</table>',
-        '<table style="margin-top:12px;">',
-        '<tr><td class="label">Fecha</td><td>' + escapeHtml(formatDate(fields.Fecha)) + '</td></tr>',
-        '<tr><td class="label">Obra</td><td>' + escapeHtml(fields.Obra) + '</td></tr>',
-        '<tr><td class="label">Sector de la Obra</td><td>' + escapeHtml(fields['Sector de la Obra']) + '</td></tr>',
-        '<tr><td class="label">Inspeccion realizada por</td><td>' + escapeHtml(inspectionAuthor) + '</td></tr>',
-        '<tr><td class="section-title" colspan="2">Observacion</td></tr>',
-        '<tr><td class="large-cell" colspan="2">' + escapeHtml(observation) + '</td></tr>',
-        '<tr><td class="section-title" colspan="2">Recomendacion</td></tr>',
-        '<tr><td class="large-cell" colspan="2">' + escapeHtml(recommendation) + '</td></tr>',
-        '<tr><td class="section-title" colspan="2">Evidencia fotografica</td></tr>',
-        '<tr><td colspan="2">' + photoMarkup + '</td></tr>',
-        '<tr><td class="label">Encargado presente en obra</td><td>' + escapeHtml(fields['Encargado presente en obra']) + '</td></tr>',
-        '<tr><td class="section-title" colspan="2">Firma</td></tr>',
-        '<tr><td class="signature-box" colspan="2">' + signatureMarkup + '</td></tr>',
+        '<table class="compact-info" style="margin-top:12px;">',
+        '<tr><td class="label">Fecha</td><td class="value">' + escapeHtml(formatDate(fields.Fecha)) + '</td><td class="label">Obra</td><td class="value">' + escapeHtml(fields.Obra) + '</td></tr>',
+        '<tr><td class="label">Inspeccion realizada por</td><td colspan="3">' + escapeHtml(inspectionAuthor) + '</td></tr>',
+        '<tr><td class="section-title" colspan="4">Observacion</td></tr>',
+        '<tr><td class="large-cell" colspan="4">' + escapeHtml(observation) + '</td></tr>',
+        '<tr><td class="section-title" colspan="4">Recomendacion</td></tr>',
+        '<tr><td class="large-cell" colspan="4">' + escapeHtml(recommendation) + '</td></tr>',
+        '<tr><td class="section-title" colspan="4">Evidencia fotografica</td></tr>',
+        '<tr><td colspan="4">' + photoMarkup + '</td></tr>',
+        '<tr><td class="label">Encargado presente en obra</td><td colspan="3">' + escapeHtml(fields['Encargado presente en obra']) + '</td></tr>',
+        '<tr><td class="section-title" colspan="4">Firma</td></tr>',
+        '<tr><td class="signature-box" colspan="4">' + signatureMarkup + '</td></tr>',
         '</table>',
         '<p class="footer-note">Documento generado desde Sistema SSO usando la plantilla base RE 002.</p>',
         '</body>',

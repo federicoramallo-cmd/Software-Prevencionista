@@ -138,20 +138,6 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="sector-obra">Sector de la Obra</label>
-                    <select id="sector-obra" name="Sector de la Obra" required>
-                        <option value="">Seleccionar sector...</option>
-                        <option value="Acceso y circulación">Acceso y circulación</option>
-                        <option value="Excavación">Excavación</option>
-                        <option value="Estructura">Estructura</option>
-                        <option value="Trabajo en altura">Trabajo en altura</option>
-                        <option value="Instalación eléctrica">Instalación eléctrica</option>
-                        <option value="Acopio y depósito">Acopio y depósito</option>
-                        <option value="Servicios higiénicos y bienestar">Servicios higiénicos y bienestar</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
                     <label for="inspeccion-realizada-por">Inspección realizada por</label>
                     <input id="inspeccion-realizada-por" name="Inspección realizada por" type="text" value="Técnico Prevencionista Federico RAMALLO - Matrícula 1355" required>
                 </div>
@@ -168,8 +154,12 @@
 
                 <div class="form-group evidence-group">
                     <label>Evidencia fotográfica</label>
-                    <button type="button" id="capture-photo" class="btn-large btn-primary">Capturar Evidencia</button>
+                    <div class="evidence-actions">
+                        <button type="button" id="capture-photo" class="btn-large btn-primary">Tomar foto</button>
+                        <button type="button" id="upload-photo" class="btn-large btn-secondary">Cargar foto</button>
+                    </div>
                     <input type="file" id="photo-input" name="Evidencia fotográfica" accept="image/*" capture="environment">
+                    <input type="file" id="photo-library-input" accept="image/*">
                     <div id="photo-preview" class="photo-preview" aria-live="polite">
                         <span>Sin evidencia cargada</span>
                     </div>
