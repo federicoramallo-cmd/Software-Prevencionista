@@ -160,6 +160,7 @@
                     </div>
                     <input type="file" id="photo-input" name="Evidencia fotográfica" accept="image/*" capture="environment">
                     <input type="file" id="photo-library-input" accept="image/*">
+                    <input type="hidden" id="photo-data" name="Evidencia fotográfica procesada">
                     <div id="photo-preview" class="photo-preview" aria-live="polite">
                         <span>Sin evidencia cargada</span>
                     </div>
@@ -343,12 +344,37 @@
             <p>Indicadores de inspecciones, hallazgos y frecuencia.</p>
         </section>
 
-        <section id="configuracion" class="content-panel placeholder-section" hidden>
-            <h2>Configuración</h2>
-            <p>Preferencias de usuario y parámetros de la aplicación.</p>
+        <section id="configuracion" class="content-panel configuracion" hidden>
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">Sincronización</p>
+                    <h2>Configuración</h2>
+                </div>
+                <span id="supabase-status-pill" class="company-pill">Supabase sin configurar</span>
+            </div>
+
+            <form id="supabase-config-form" class="settings-form" autocomplete="off">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="supabase-url">Supabase URL</label>
+                        <input id="supabase-url" type="url" placeholder="https://tu-proyecto.supabase.co">
+                    </div>
+                    <div class="form-group">
+                        <label for="supabase-anon-key">Anon public key</label>
+                        <input id="supabase-anon-key" type="password" placeholder="eyJhbGciOi...">
+                    </div>
+                </div>
+                <div class="form-actions settings-actions">
+                    <button type="submit" class="btn-large btn-primary">Guardar configuración</button>
+                    <button type="button" id="sync-supabase-now" class="btn-large btn-secondary">Sincronizar ahora</button>
+                    <button type="button" id="clear-supabase-config" class="btn-large btn-secondary">Desconectar</button>
+                </div>
+                <p id="supabase-sync-status" class="muted-text">Los datos se guardan localmente hasta configurar Supabase.</p>
+            </form>
         </section>
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="app.js"></script>
 </body>
 </html>

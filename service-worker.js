@@ -1,6 +1,6 @@
 // service-worker.js - Service Worker para funcionalidad offline
 
-const CACHE_NAME = 'sso-cache-v10';
+const CACHE_NAME = 'sso-cache-v12';
 const urlsToCache = [
     '/',
     '/index.html',

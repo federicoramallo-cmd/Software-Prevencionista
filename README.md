@@ -9,6 +9,16 @@ Aplicación web PWA para Técnicos Prevencionistas.
 3. Navega usando el menú lateral (hamburguesa en móvil).
 4. En "Inspecciones": Crea una nueva inspección con checklist, fotos y firma digital.
 
+## Sincronización con Supabase
+
+1. Crea un proyecto en Supabase.
+2. Copia y ejecuta el contenido de `supabase-schema.sql` en el SQL Editor de Supabase.
+3. En la app, entra a "Configuración".
+4. Pega la `Project URL` y la `anon public key`.
+5. Pulsa "Guardar configuración" y luego "Sincronizar ahora".
+
+Las inspecciones y documentos se siguen guardando localmente en IndexedDB. Cuando Supabase está configurado y hay conexión, se sincronizan con las tablas `sso_inspecciones` y `sso_documentos`.
+
 ## Funcionalidades implementadas
 
 - Dashboard con selector de empresas y alertas.
@@ -16,21 +26,23 @@ Aplicación web PWA para Técnicos Prevencionistas.
 - Alta de actividades nuevas y cambio de estado.
 - Descarga de documentos en su formato original.
 - Seguimiento de accidentes.
+- Sincronización opcional de inspecciones y documentos con Supabase.
 - Módulo de inspecciones optimizado para móvil:
   - Checklist interactivo.
   - Captura de fotos con geolocalización.
   - Firma digital con canvas.
-  - Almacenamiento offline con IndexedDB.
+  - Almacenamiento offline con IndexedDB y sincronización cloud opcional.
 
 ## Próximos pasos
 
 - Generación automática de PDFs.
 - OCR para carga inteligente de datos.
-- Sincronización con backend.
+- Autenticación de usuarios para políticas de Supabase más restringidas.
 - Módulos de planificación y analíticas.
 
 ## Tecnologías
 
 - HTML5, CSS3, JavaScript (Vanilla).
 - PWA con Service Worker e IndexedDB.
+- Supabase JS para sincronización cloud.
 - APIs: Camera, Geolocation, Canvas.

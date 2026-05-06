@@ -9,6 +9,9 @@ const INSPECTION_TEMPLATE_TITLE = 'RE 002 Registro de inspeccion de seguridad';
 const PHOTO_MAX_WIDTH = 1600;
 const PHOTO_MAX_HEIGHT = 1200;
 const PHOTO_QUALITY = 0.82;
+const SUPABASE_SETTINGS_KEY = 'SSO_SUPABASE_SETTINGS';
+const SUPABASE_INSPECTIONS_TABLE = 'sso_inspecciones';
+const SUPABASE_DOCUMENTS_TABLE = 'sso_documentos';
 
 const DEFAULT_BRAND = {
     colorCorporativo: '#0f766e',
@@ -57,6 +60,9 @@ let accidents = [];
 let initialActivities = [];
 let initialAccidents = [];
 let refreshSignaturePad = function() {};
+let supabaseClient = null;
+let supabaseSettings = null;
+let supabaseSyncInProgress = false;
 
 document.addEventListener('DOMContentLoaded', function() {
     initApp();
@@ -76,6 +82,8 @@ async function initApp() {
     setupPlanningControls();
     setupAccidentControls();
     setupDocuments();
+    setupSupabaseControls();
+    initializeSupabaseClient();
     applyCompanyBrand(null);
 
     try {
@@ -91,6 +99,7 @@ async function initApp() {
         await dbReadyPromise;
         await seedInitialData();
         await refreshOperationalData();
+        await syncSupabaseData({ silent: true });
     } catch (error) {
         console.error('Error inicializando datos operativos:', error);
         if (!activities.length && !accidents.length) {
@@ -1117,6 +1126,266 @@ async function handleDocumentAction(event) {
     }
 }
 
+function setupSupabaseControls() {
+    const form = document.getElementById('supabase-config-form');
+    const urlField = document.getElementById('supabase-url');
+    const keyField = document.getElementById('supabase-anon-key');
+    const syncButton = document.getElementById('sync-supabase-now');
+    const clearButton = document.getElementById('clear-supabase-config');
+
+    supabaseSettings = loadSupabaseSettings();
+
+    if (urlField && supabaseSettings && supabaseSettings.url) {
+        urlField.value = supabaseSettings.url;
+    }
+
+    if (keyField && supabaseSettings && supabaseSettings.anonKey) {
+        keyField.value = supabaseSettings.anonKey;
+    }
+
+    if (form) {
+        form.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const nextSettings = {
+                url: getValue('supabase-url'),
+                anonKey: getValue('supabase-anon-key')
+            };
+
+            if (!nextSettings.url || !nextSettings.anonKey) {
+                setSupabaseStatus('Completá URL y anon key para sincronizar.', 'warning');
+                return;
+            }
+
+            saveSupabaseSettings(nextSettings);
+            initializeSupabaseClient();
+            await syncSupabaseData();
+        });
+    }
+
+    if (syncButton) {
+        syncButton.addEventListener('click', function() {
+            syncSupabaseData();
+        });
+    }
+
+    if (clearButton) {
+        clearButton.addEventListener('click', function() {
+            if (!confirm('¿Desconectar Supabase en este dispositivo? Los datos locales no se borran.')) return;
+            localStorage.removeItem(SUPABASE_SETTINGS_KEY);
+            supabaseSettings = null;
+            supabaseClient = null;
+            if (urlField) urlField.value = '';
+            if (keyField) keyField.value = '';
+            setSupabaseStatus('Supabase desconectado. Se seguirá guardando localmente.', 'warning');
+        });
+    }
+
+    updateSupabaseStatusUI();
+}
+
+function loadSupabaseSettings() {
+    try {
+        const rawSettings = localStorage.getItem(SUPABASE_SETTINGS_KEY);
+        if (!rawSettings) return null;
+        const parsedSettings = JSON.parse(rawSettings);
+        if (!parsedSettings || !parsedSettings.url || !parsedSettings.anonKey) return null;
+        return parsedSettings;
+    } catch (error) {
+        console.warn('No se pudo leer la configuracion de Supabase:', error);
+        return null;
+    }
+}
+
+function saveSupabaseSettings(settings) {
+    supabaseSettings = settings;
+    localStorage.setItem(SUPABASE_SETTINGS_KEY, JSON.stringify(settings));
+}
+
+function initializeSupabaseClient() {
+    supabaseSettings = supabaseSettings || loadSupabaseSettings();
+
+    if (!supabaseSettings) {
+        supabaseClient = null;
+        updateSupabaseStatusUI();
+        return null;
+    }
+
+    if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+        supabaseClient = null;
+        setSupabaseStatus('No se pudo cargar la libreria de Supabase. Revisá la conexión.', 'warning');
+        return null;
+    }
+
+    supabaseClient = window.supabase.createClient(supabaseSettings.url, supabaseSettings.anonKey);
+    updateSupabaseStatusUI();
+    return supabaseClient;
+}
+
+function getSupabaseClient() {
+    return supabaseClient || initializeSupabaseClient();
+}
+
+function updateSupabaseStatusUI() {
+    if (!supabaseSettings) {
+        setSupabaseStatus('Supabase sin configurar. Guardado local activo.', 'warning');
+        return;
+    }
+
+    setSupabaseStatus('Supabase configurado. Listo para sincronizar.', 'success');
+}
+
+function setSupabaseStatus(message, tone) {
+    const statusText = document.getElementById('supabase-sync-status');
+    const statusPill = document.getElementById('supabase-status-pill');
+
+    if (statusText) {
+        statusText.textContent = message;
+    }
+
+    if (statusPill) {
+        statusPill.textContent = tone === 'success' ? 'Supabase conectado' : 'Supabase pendiente';
+    }
+}
+
+async function syncSupabaseData(options) {
+    const settings = Object.assign({ silent: false }, options || {});
+    const client = getSupabaseClient();
+
+    if (!client) {
+        if (!settings.silent) {
+            setSupabaseStatus('Configurá Supabase antes de sincronizar.', 'warning');
+        }
+        return false;
+    }
+
+    if (!navigator.onLine) {
+        if (!settings.silent) {
+            setSupabaseStatus('Sin conexión. Se sincronizará cuando vuelva internet.', 'warning');
+        }
+        return false;
+    }
+
+    if (supabaseSyncInProgress) return false;
+
+    supabaseSyncInProgress = true;
+    if (!settings.silent) {
+        setSupabaseStatus('Sincronizando inspecciones y documentos...', 'warning');
+    }
+
+    try {
+        await dbReadyPromise;
+        await pushLocalSupabaseData(client);
+        await pullSupabaseData(client);
+        await renderDocuments();
+        setSupabaseStatus('Sincronización completada ' + formatSyncTime(new Date()) + '.', 'success');
+        return true;
+    } catch (error) {
+        console.error('Error sincronizando con Supabase:', error);
+        setSupabaseStatus('No se pudo sincronizar con Supabase: ' + (error.message || error), 'warning');
+        return false;
+    } finally {
+        supabaseSyncInProgress = false;
+    }
+}
+
+async function pushLocalSupabaseData(client) {
+    const localInspections = await getAllFromIndexedDB('inspecciones');
+    const localDocuments = (await getAllFromIndexedDB('documentos')).filter(function(documentInfo) {
+        return documentInfo && documentInfo.tipo === 'inspeccion';
+    });
+
+    if (localInspections.length > 0) {
+        await upsertSupabaseRows(client, SUPABASE_INSPECTIONS_TABLE, localInspections.map(toSupabaseInspectionRow));
+    }
+
+    if (localDocuments.length > 0) {
+        await upsertSupabaseRows(client, SUPABASE_DOCUMENTS_TABLE, localDocuments.map(toSupabaseDocumentRow));
+    }
+}
+
+async function pullSupabaseData(client) {
+    const inspectionsResponse = await client
+        .from(SUPABASE_INSPECTIONS_TABLE)
+        .select('*')
+        .order('updated_at', { ascending: false });
+
+    if (inspectionsResponse.error) throw inspectionsResponse.error;
+
+    const documentsResponse = await client
+        .from(SUPABASE_DOCUMENTS_TABLE)
+        .select('*')
+        .order('updated_at', { ascending: false });
+
+    if (documentsResponse.error) throw documentsResponse.error;
+
+    const remoteInspections = (inspectionsResponse.data || []).map(fromSupabasePayloadRow).filter(Boolean);
+    const remoteDocuments = (documentsResponse.data || []).map(fromSupabasePayloadRow).filter(Boolean);
+
+    if (remoteInspections.length > 0) {
+        await putManyInIndexedDB('inspecciones', remoteInspections);
+    }
+
+    if (remoteDocuments.length > 0) {
+        await putManyInIndexedDB('documentos', remoteDocuments);
+    }
+}
+
+async function upsertSupabaseRows(client, tableName, rows) {
+    const chunkSize = 25;
+
+    for (let index = 0; index < rows.length; index += chunkSize) {
+        const chunk = rows.slice(index, index + chunkSize);
+        const response = await client
+            .from(tableName)
+            .upsert(chunk, { onConflict: 'id' });
+
+        if (response.error) throw response.error;
+    }
+}
+
+async function syncInspectionToSupabase(inspectionData, documentData) {
+    const client = getSupabaseClient();
+    if (!client || !navigator.onLine) return false;
+
+    await upsertSupabaseRows(client, SUPABASE_INSPECTIONS_TABLE, [toSupabaseInspectionRow(inspectionData)]);
+    await upsertSupabaseRows(client, SUPABASE_DOCUMENTS_TABLE, [toSupabaseDocumentRow(documentData)]);
+    return true;
+}
+
+function toSupabaseInspectionRow(inspectionData) {
+    return {
+        id: Number(inspectionData.id),
+        empresa_id: inspectionData.empresaId || '',
+        empresa_nombre: inspectionData.empresaNombre || '',
+        fecha: inspectionData.fecha || null,
+        obra: inspectionData.obra || '',
+        payload: inspectionData,
+        updated_at: new Date(inspectionData.actualizadoEn || inspectionData.creadoEn || Date.now()).toISOString()
+    };
+}
+
+function toSupabaseDocumentRow(documentData) {
+    return {
+        id: Number(documentData.id),
+        empresa_id: documentData.empresaId || '',
+        empresa_nombre: documentData.empresaNombre || '',
+        fecha: documentData.fecha || null,
+        obra: documentData.obra || '',
+        tipo: documentData.tipo || 'documento',
+        payload: documentData,
+        updated_at: new Date(documentData.actualizadoEn || documentData.creadoEn || Date.now()).toISOString()
+    };
+}
+
+function fromSupabasePayloadRow(row) {
+    if (!row || !row.payload) return null;
+    return row.payload;
+}
+
+function formatSyncTime(date) {
+    return String(date.getHours()).padStart(2, '0') + ':' + String(date.getMinutes()).padStart(2, '0');
+}
+
 function exportPlanningToExcel() {
     if (!activities.length) {
         alert('No hay actividades para exportar.');
@@ -1177,9 +1446,11 @@ function setupInspections() {
 
     if (!form || !canvas) return;
 
+    const photoDataField = ensurePhotoDataField(form);
     const inspectionCompanySelect = ensureInspectionCompanyControls(form);
     const context = canvas.getContext('2d');
     let currentPhoto = null;
+    let pendingPhotoPromise = null;
     let drawing = false;
     let hasSignature = false;
 
@@ -1239,11 +1510,16 @@ function setupInspections() {
         });
 
         photoInput.addEventListener('change', function(event) {
-            processSelectedPhoto(event.target.files[0], photoPreview, function(photoData) {
-                currentPhoto = photoData;
-            }).finally(function() {
-                photoInput.value = '';
-            });
+            pendingPhotoPromise = processSelectedPhoto(event.target.files[0], photoPreview)
+                .then(function(photoData) {
+                    currentPhoto = photoData;
+                    if (photoDataField) photoDataField.value = photoData || '';
+                    return photoData;
+                })
+                .finally(function() {
+                    pendingPhotoPromise = null;
+                    photoInput.value = '';
+                });
         });
     }
 
@@ -1253,11 +1529,16 @@ function setupInspections() {
         });
 
         photoLibraryInput.addEventListener('change', function(event) {
-            processSelectedPhoto(event.target.files[0], photoPreview, function(photoData) {
-                currentPhoto = photoData;
-            }).finally(function() {
-                photoLibraryInput.value = '';
-            });
+            pendingPhotoPromise = processSelectedPhoto(event.target.files[0], photoPreview)
+                .then(function(photoData) {
+                    currentPhoto = photoData;
+                    if (photoDataField) photoDataField.value = photoData || '';
+                    return photoData;
+                })
+                .finally(function() {
+                    pendingPhotoPromise = null;
+                    photoLibraryInput.value = '';
+                });
         });
     }
 
@@ -1297,7 +1578,12 @@ function setupInspections() {
         }
 
         try {
-            await saveInspection(form, currentPhoto, signatureData, inspectionCompany);
+            if (pendingPhotoPromise) {
+                await pendingPhotoPromise;
+            }
+
+            const photoForReport = getInspectionPhotoData(currentPhoto);
+            await saveInspection(form, photoForReport, signatureData, inspectionCompany);
             await renderDocuments();
             alert('Inspeccion guardada. El reporte quedo disponible en Documentos.');
             resetInspectionForm();
@@ -1315,13 +1601,14 @@ function setupInspections() {
         context.clearRect(0, 0, canvas.width, canvas.height);
         hasSignature = false;
         currentPhoto = null;
+        if (photoDataField) photoDataField.value = '';
         if (signatureField) signatureField.value = '';
         renderPhotoEmpty(photoPreview);
     }
 }
 
-function processSelectedPhoto(file, photoPreview, setCurrentPhoto) {
-    if (!file) return Promise.resolve();
+function processSelectedPhoto(file, photoPreview) {
+    if (!file) return Promise.resolve(null);
 
     const captureBtn = document.getElementById('capture-photo');
     const uploadBtn = document.getElementById('upload-photo');
@@ -1332,19 +1619,46 @@ function processSelectedPhoto(file, photoPreview, setCurrentPhoto) {
 
     return compressImageFile(file)
         .then(function(photoData) {
-            setCurrentPhoto(photoData);
             renderPhotoPreview(photoPreview, photoData, file.name);
+            return photoData;
         })
         .catch(function(error) {
             console.error('Error procesando foto:', error);
             alert('No se pudo procesar la foto. Intente cargar otra imagen.');
-            setCurrentPhoto(null);
             renderPhotoEmpty(photoPreview);
+            return null;
         })
         .finally(function() {
             if (captureBtn) captureBtn.disabled = false;
             if (uploadBtn) uploadBtn.disabled = false;
         });
+}
+
+function ensurePhotoDataField(form) {
+    let field = document.getElementById('photo-data');
+    if (field) return field;
+
+    field = document.createElement('input');
+    field.type = 'hidden';
+    field.id = 'photo-data';
+    field.name = 'Evidencia fotográfica procesada';
+
+    const photoPreview = document.getElementById('photo-preview');
+    if (photoPreview && photoPreview.parentElement) {
+        photoPreview.parentElement.insertBefore(field, photoPreview);
+    } else {
+        form.append(field);
+    }
+    return field;
+}
+
+function getInspectionPhotoData(currentPhoto) {
+    const photoDataField = document.getElementById('photo-data');
+    const previewImage = document.querySelector('#photo-preview img');
+
+    return (photoDataField && photoDataField.value) ||
+        currentPhoto ||
+        (previewImage ? previewImage.src : '');
 }
 
 function ensureInspectionCompanyControls(form) {
@@ -1495,6 +1809,7 @@ async function saveInspection(form, currentPhoto, signatureData, inspectionCompa
     updateInspectionCompanyFields(inspectionCompany);
     const formData = new FormData(form);
     const logoEmpresa = inspectionCompany.logoURL ? await imageUrlToDataUrl(inspectionCompany.logoURL) : '';
+    const reportPhoto = currentPhoto || getInspectionPhotoData(null);
     const camposRE002 = {
         'Empresa': formData.get('Empresa'),
         'Fecha': formData.get('Fecha'),
@@ -1503,7 +1818,7 @@ async function saveInspection(form, currentPhoto, signatureData, inspectionCompa
         'Observación': formData.get('Observación'),
         'Recomendación': formData.get('Recomendación'),
         'Encargado presente en obra': formData.get('Encargado presente en obra'),
-        'Evidencia fotográfica': currentPhoto,
+        'Evidencia fotográfica': reportPhoto,
         'Firma': signatureData
     };
 
@@ -1517,7 +1832,7 @@ async function saveInspection(form, currentPhoto, signatureData, inspectionCompa
         camposRE002,
         fecha: camposRE002.Fecha,
         obra: camposRE002.Obra,
-        evidenciaFotografica: currentPhoto,
+        evidenciaFotografica: reportPhoto,
         firma: signatureData,
         creadoEn: new Date().toISOString(),
         sincronizado: false
@@ -1542,6 +1857,17 @@ async function saveInspection(form, currentPhoto, signatureData, inspectionCompa
 
     await saveToIndexedDB('inspecciones', inspectionData);
     await saveToIndexedDB('documentos', documentData);
+
+    syncInspectionToSupabase(inspectionData, documentData)
+        .then(function(synced) {
+            if (synced) {
+                setSupabaseStatus('Inspección sincronizada con Supabase.', 'success');
+            }
+        })
+        .catch(function(error) {
+            console.warn('La inspección quedó local pero no se pudo sincronizar:', error);
+            setSupabaseStatus('Inspección guardada localmente. Pendiente de sincronizar.', 'warning');
+        });
 
     return {
         inspeccion: inspectionData,
@@ -2048,6 +2374,7 @@ function setText(id, value) {
 function syncData() {
     if (navigator.onLine) {
         console.log('Sincronizando datos con el servidor...');
+        syncSupabaseData({ silent: true });
     }
 }
 

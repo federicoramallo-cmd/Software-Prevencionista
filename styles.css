@@ -535,6 +535,20 @@ textarea:focus {
     display: none;
 }
 
+.settings-form {
+    display: grid;
+    gap: 1rem;
+    max-width: 920px;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface-muted);
+}
+
+.settings-actions {
+    grid-template-columns: 1fr;
+}
+
 .planning-toolbar {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -844,6 +858,10 @@ textarea:focus {
 
     .form-actions {
         grid-template-columns: 1fr 1fr;
+    }
+
+    .settings-actions {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
     .activity-card-footer {
